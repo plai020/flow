@@ -1,0 +1,20 @@
+{
+  "short_name": "flow",
+  "name": "flow - Expense Tracker",
+  "icons": [
+    {
+      "src": "https://ibb.co/vCzYdQWy",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://ibb.co/vCzYdQWy",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#FFF9C4",
+  "background_color": "#FFF9C4"
+}
