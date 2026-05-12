@@ -9,7 +9,7 @@ import { AppProvider } from './context/AppContext';
 function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Home />} />
