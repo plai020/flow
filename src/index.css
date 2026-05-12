@@ -3,8 +3,11 @@
 :root {
   --color-primary: #FDE047; /* Vibrant Goose Yellow for accents/active */
   --color-primary-light: #FEF9C3; /* Very light yellow for backgrounds */
+  --color-primary-dark: #EAB308;
+  
   --color-income: #BAE6FD; /* Light blue for income */
   --color-income-light: #E0F2FE;
+  --color-income-dark: #38BDF8;
   
   --color-background: #FFFFFF;
   --color-surface: #FAFAFA;
@@ -36,18 +39,17 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-main);
   line-height: 1.5;
-  /* Prevent overscroll bounce background showing white if we want a yellow splash, but white is fine for app content */
   overscroll-behavior-y: none; 
 }
 
-/* Base utility classes since we aren't using Tailwind */
+/* Base Layout */
 .container {
-  max-width: 480px; /* Mobile constraints */
+  max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
   position: relative;
   background-color: var(--color-background);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
 }
@@ -58,6 +60,7 @@ body {
   overflow-y: auto;
 }
 
+/* Bottom Nav */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -72,7 +75,7 @@ body {
   justify-content: space-around;
   align-items: center;
   z-index: 50;
-  padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item {
@@ -100,6 +103,155 @@ body {
   padding: 4px 12px;
 }
 
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Input Fields */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.input-group label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+.input-field {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  width: 100%;
+  outline: none;
+  background-color: var(--color-surface);
+}
+.input-field:focus {
+  border-color: var(--color-primary-dark);
+}
+
+/* Keypad */
+.keypad-container {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 16px 8px env(safe-area-inset-bottom) 8px;
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.keypad-btn {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--color-text-main);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keypad-btn:active {
+  background-color: var(--color-border);
+}
+
+.keypad-btn.action {
+  background-color: var(--color-border);
+}
+
+.keypad-btn.primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary-dark);
+  grid-row: span 2;
+}
+
+/* Calendar Grid */
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 4px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.calendar-cell.active {
+  border-color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+}
+
+.calendar-cell .date-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.calendar-cell .balance-text {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.text-red { color: #EF4444; }
+.text-green { color: #10B981; }
+
+/* Utilities */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
@@ -113,17 +265,10 @@ body {
 .text-center { text-align: center; }
 .font-bold { font-weight: 700; }
 .font-medium { font-weight: 500; }
+.text-muted { color: var(--color-text-muted); }
+.text-xl { font-size: 20px; }
+.text-2xl { font-size: 24px; }
 
-.btn {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-}
-
-/* Hide scrollbar for a cleaner look */
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
