@@ -16,7 +16,9 @@ export default function Home() {
 
   const { transactions, budgets } = useApp();
 
-  const toggleNode = (nodeId) => setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
+  };
 
   const prevPeriod = () => {
     if (periodType === 'month') setCurrentDate(subMonths(currentDate, 1));
@@ -81,15 +83,17 @@ export default function Home() {
   };
 
   const themeColor = type === 'expense' ? 'var(--color-expense)' : 'var(--color-income)';
+  const activeColorClass = type === 'expense' ? 'text-expense' : 'text-income';
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
+    <div className="flex flex-col h-full bg-white relative overflow-hidden">
+      
       {/* Top Toggles */}
-      <div className="flex justify-center gap-6 p-6 border-b border-gray-50">
+      <div className="flex justify-center p-6 border-b border-gray-50 bg-white z-10" style={{ gap: '15px' }}>
         {['month', 'quarter', 'year'].map(p => (
           <button 
             key={p} 
-            className={`btn-3d px-8 py-3 font-bold text-lg ${periodType === p ? 'btn-3d-primary shadow-inner scale-95' : 'text-gray-400'}`}
+            className={`btn-3d px-6 py-3 font-bold text-xl ${periodType === p ? 'btn-3d-primary shadow-inner scale-95' : 'text-muted'}`}
             onClick={() => setPeriodType(p)}
           >
             {p === 'month' ? '月' : p === 'quarter' ? '季' : '年'}
@@ -97,24 +101,24 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto pb-32">
         {/* Date Label */}
-        <div className="flex justify-center items-center py-6 gap-3">
+        <div className="flex justify-center items-center py-6 gap-2">
           <button onClick={prevPeriod} className="btn-3d w-10 h-10"><ChevronLeft size={24} /></button>
-          <div className="text-3xl font-bold">{getPeriodLabel()}</div>
+          <div className="text-2xl font-bold">{getPeriodLabel()}</div>
           <button onClick={nextPeriod} className="btn-3d w-10 h-10"><ChevronRight size={24} /></button>
         </div>
 
         {/* Expense / Income Tabs */}
-        <div className="flex justify-between px-6 mb-8 gap-4">
+        <div className="flex justify-center px-6 mb-8 gap-4">
           <button 
-            className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'expense' ? 'btn-3d-expense' : 'text-gray-400'}`}
+            className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'expense' ? 'btn-3d-expense' : 'text-muted'}`}
             onClick={() => setType('expense')}
           >
             支出
           </button>
           <button 
-            className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'income' ? 'btn-3d-income' : 'text-gray-400'}`}
+            className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'income' ? 'btn-3d-income' : 'text-muted'}`}
             onClick={() => setType('income')}
           >
             收入
@@ -124,15 +128,13 @@ export default function Home() {
         {/* Actual / Budget Toggle */}
         <div className="flex justify-center gap-6 mb-8">
           <button 
-            className={`btn-3d px-10 py-4 font-bold text-xl ${mode === 'actual' ? 'shadow-inner bg-gray-50' : 'text-gray-400'}`}
-            style={{ color: mode === 'actual' ? themeColor : '' }}
+            className={`btn-3d px-10 py-4 ${mode === 'actual' ? `font-bold text-2xl shadow-inner bg-surface ${activeColorClass}` : 'font-medium text-lg text-light'}`}
             onClick={() => setMode('actual')}
           >
             實際
           </button>
           <button 
-            className={`btn-3d px-10 py-4 font-bold text-xl ${mode === 'budget' ? 'shadow-inner bg-gray-50' : 'text-gray-400'}`}
-            style={{ color: mode === 'budget' ? themeColor : '' }}
+            className={`btn-3d px-10 py-4 ${mode === 'budget' ? `font-bold text-2xl shadow-inner bg-surface ${activeColorClass}` : 'font-medium text-lg text-light'}`}
             onClick={() => setMode('budget')}
           >
             預算
@@ -140,26 +142,26 @@ export default function Home() {
         </div>
 
         {/* Chart Area */}
-        <div className="flex justify-center mb-8 px-10">
-          <div className="w-[280px] h-[280px] p-6 bg-white rounded-[50px] shadow-lg border border-gray-50 flex items-center justify-center">
+        <div className="flex justify-center mb-8 px-6">
+          <div className="w-full max-w-[280px] aspect-square p-6 bg-white rounded-[50px] shadow-lg border border-gray-50 flex items-center justify-center">
              {displayData.total > 0 ? (
                <Pie data={chartData} options={{ plugins: { legend: { display: false } }, cutout: '0%' }} />
              ) : (
-               <div className="text-gray-300 font-bold">無資料</div>
+               <div className="text-light font-bold">無資料</div>
              )}
           </div>
         </div>
 
         {/* Summary Card */}
-        <div className="mx-6 p-6 rounded-[35px] shadow-sm border border-gray-50 text-center mb-10 bg-gray-50/30">
-          <div className="text-gray-400 font-bold mb-2">總計 ({mode === 'actual' ? '實際' : '預算'})</div>
+        <div className="mx-6 p-6 rounded-lg shadow-sm border border-gray-50 text-center mb-8 bg-surface">
+          <div className="text-muted font-bold mb-2">總計 ({mode === 'actual' ? '實際' : '預算'})</div>
           <div className="text-4xl font-bold" style={{ color: themeColor }}>
             ${displayData.total.toLocaleString()}
           </div>
         </div>
 
         {/* List Details */}
-        <div className="px-6 space-y-4">
+        <div className="px-6 flex flex-col gap-4">
           {Object.entries(displayData.groups).map(([cat, data], idx) => {
             const Icon = CATEGORY_ICONS[cat] || CATEGORY_ICONS['default'];
             const isExpanded = expandedNodes[cat];
@@ -167,8 +169,8 @@ export default function Home() {
             const pct = displayData.total > 0 ? ((data.amount / displayData.total) * 100).toFixed(1) : 0;
 
             return (
-              <div key={cat} className="bg-white rounded-[30px] border border-gray-50 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => toggleNode(cat)}>
+              <div key={cat} className="bg-white rounded-lg border border-gray-50 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between p-5 cursor-pointer bg-surface" onClick={() => toggleNode(cat)}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: color + '33' }}>
                       <Icon size={24} style={{ color: color }} />
@@ -178,18 +180,18 @@ export default function Home() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="font-bold text-2xl">${data.amount.toLocaleString()}</div>
-                      <div className="text-xs font-bold text-gray-300">{pct}%</div>
+                      <div className="text-xs font-bold text-light">{pct}%</div>
                     </div>
-                    {isExpanded ? <ChevronDown size={24} className="text-gray-200" /> : <ChevronRightIcon size={24} className="text-gray-200" />}
+                    {isExpanded ? <ChevronDown size={24} className="text-light" /> : <ChevronRightIcon size={24} className="text-light" />}
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div className="bg-gray-50/50 border-t border-gray-50">
+                  <div className="bg-white border-t border-gray-50">
                     {Object.entries(data.subCategories).map(([sub, amt]) => (
-                      <div key={sub} className="flex justify-between items-center p-4 pl-20 border-b border-gray-50/50 last:border-0">
-                        <span className="font-bold text-lg text-gray-500">{sub}</span>
-                        <span className="font-bold text-lg text-gray-800">${amt.toLocaleString()}</span>
+                      <div key={sub} className="flex justify-between items-center p-4 pl-20 border-b border-gray-50 last:border-0">
+                        <span className="font-bold text-lg text-muted">{sub}</span>
+                        <span className="font-bold text-lg text-main">${amt.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>

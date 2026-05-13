@@ -10,7 +10,7 @@ export default function AppLayout() {
   ];
 
   return (
-    <div className="container">
+    <div className="app-container">
       <div className="content-area">
         <Outlet />
       </div>
