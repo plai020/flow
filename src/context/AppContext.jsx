@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Utensils, Bus, ShoppingBag, Home, Film, DollarSign, TrendingUp, HelpCircle } from 'lucide-react';
+
+export const CATEGORY_ICONS = {
+  '餐飲': Utensils,
+  '交通': Bus,
+  '購物': ShoppingBag,
+  '居住': Home,
+  '娛樂': Film,
+  '薪資': DollarSign,
+  '投資': TrendingUp,
+  '其他': HelpCircle,
+  'default': HelpCircle
+};
 
 const AppContext = createContext();
 

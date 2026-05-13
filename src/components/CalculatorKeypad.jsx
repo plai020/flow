@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Delete } from 'lucide-react';
 
-export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppendNote }) {
+export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppendNote, onClickUnit }) {
   const [expression, setExpression] = useState('0');
 
   // Safer alternative to eval() for basic math operations
@@ -88,7 +88,7 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
       <div className="keypad-grid">
         {isExpense ? (
           <>
-            <button className="keypad-btn action" onClick={() => onAppendNote('單位')}>Unit</button>
+            <button className="keypad-btn action" onClick={onClickUnit}>Unit</button>
             <button className="keypad-btn action" onClick={() => onAppendNote('$')}>$</button>
           </>
         ) : (
