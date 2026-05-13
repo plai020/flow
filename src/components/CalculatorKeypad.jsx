@@ -4,6 +4,47 @@ import { Delete } from 'lucide-react';
 export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppendNote }) {
   const [expression, setExpression] = useState('0');
 
+  // Safer alternative to eval() for basic math operations
+  const safeCalculate = (expr) => {
+    try {
+      const cleanExpr = expr.replace(/×/g, '*').replace(/÷/g, '/');
+      // Basic validation: only numbers and operators allowed
+      if (!/^[\d.+\-*/\s]+$/.test(cleanExpr)) return NaN;
+      
+      // Tokenize the expression (numbers and operators)
+      const tokens = cleanExpr.match(/\d+\.?\d*|[+\-*/]/g);
+      if (!tokens) return 0;
+
+      // First pass: handle multiplication and division (precedence)
+      const intermediate = [];
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token === '*' || token === '/') {
+          const left = parseFloat(intermediate.pop());
+          const right = parseFloat(tokens[++i]);
+          intermediate.push(token === '*' ? left * right : left / right);
+        } else {
+          intermediate.push(token);
+        }
+      }
+
+      // Second pass: handle addition and subtraction
+      let result = parseFloat(intermediate[0]);
+      for (let i = 1; i < intermediate.length; i += 2) {
+        const op = intermediate[i];
+        const val = parseFloat(intermediate[i + 1]);
+        if (op === '+') result += val;
+        if (op === '-') result -= val;
+      }
+      
+      return isNaN(result) ? 0 : result;
+    } catch (e) {
+      console.error("Calculation error:", e);
+      return NaN;
+    }
+  };
+
+
   const handlePress = (val) => {
     if (expression === '0' && !['+', '-', '*', '/'].includes(val) && val !== '.') {
       setExpression(val);
@@ -19,26 +60,19 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
   };
 
   const handleCalculate = () => {
-    try {
-      // Basic math evaluation, safe enough for this purpose
-      // eslint-disable-next-line no-eval
-      const result = eval(expression.replace(/×/g, '*').replace(/÷/g, '/'));
-      setExpression(String(Number(result.toFixed(2)))); // Round to 2 decimal places max
-    } catch (e) {
+    const result = safeCalculate(expression);
+    if (!isNaN(result)) {
+      setExpression(String(Number(result.toFixed(2))));
+    } else {
       setExpression('Error');
       setTimeout(() => setExpression('0'), 1000);
     }
   };
 
   const handleSubmit = () => {
-    try {
-      // eslint-disable-next-line no-eval
-      const finalAmount = eval(expression.replace(/×/g, '*').replace(/÷/g, '/'));
-      if (!isNaN(finalAmount)) {
-        onConfirm(finalAmount);
-      }
-    } catch {
-      // Ignore
+    const finalAmount = safeCalculate(expression);
+    if (!isNaN(finalAmount)) {
+      onConfirm(finalAmount);
     }
   };
 
