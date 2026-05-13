@@ -63,7 +63,7 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
   const isExpense = type === 'expense';
 
   return (
-    <div className="bg-[#F8F9FA] p-6 rounded-t-[40px] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+    <div className="bg-surface p-6 rounded-t-3xl shadow-lg">
       <div className="flex justify-between items-center mb-6 px-4">
         <div className="text-gray-400 font-bold text-lg">金額</div>
         <div className="text-4xl font-bold truncate">{expression}</div>
@@ -103,7 +103,7 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
       </div>
       
       <button 
-        className="w-full mt-6 py-5 rounded-[30px] font-bold text-2xl shadow-lg active:scale-[0.98] transition-transform"
+        className="w-full mt-6 py-5 rounded-30 font-bold text-2xl shadow-md active:scale-95 transition-transform"
         style={{ 
           backgroundColor: isExpense ? 'var(--color-expense)' : 'var(--color-income)',
           color: 'white'

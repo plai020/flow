@@ -143,7 +143,7 @@ export default function Home() {
 
         {/* Chart Area */}
         <div className="flex justify-center mb-8 px-6">
-          <div className="w-full max-w-[280px] aspect-square p-6 bg-white rounded-[50px] shadow-lg border border-gray-50 flex items-center justify-center">
+          <div className="w-full max-w-280 aspect-square p-6 bg-white rounded-50 shadow-lg border border-gray-50 flex items-center justify-center">
              {displayData.total > 0 ? (
                <Pie data={chartData} options={{ plugins: { legend: { display: false } }, cutout: '0%' }} />
              ) : (

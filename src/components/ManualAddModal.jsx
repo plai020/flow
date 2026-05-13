@@ -77,7 +77,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
         </button>
       </div>
 
-      <div className={`flex-1 overflow-y-auto px-6 pt-6 ${showKeypad ? 'pb-[400px]' : 'pb-10'}`}>
+      <div className={`flex-1 overflow-y-auto px-6 pt-6 ${showKeypad ? 'pb-400' : 'pb-10'}`}>
         {/* Expense / Income Toggle */}
         <div className="flex justify-center gap-6 mb-8">
           <button 
@@ -102,7 +102,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
               const Icon = CATEGORY_ICONS[cat] || CATEGORY_ICONS['default'];
               const isActive = mainCategory === cat;
               return (
-                <button key={cat} className="flex flex-col items-center gap-3 min-w-[80px]" onClick={() => setMainCategory(cat)}>
+                <button key={cat} className="flex flex-col items-center gap-3 min-w-80" onClick={() => setMainCategory(cat)}>
                   <div 
                     className={`w-20 h-20 rounded-lg flex items-center justify-center transition-all ${isActive ? 'btn-3d shadow-inner scale-95' : 'btn-3d'}`}
                     style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)' }}
@@ -113,7 +113,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
                 </button>
               );
             })}
-            <button className="flex flex-col items-center gap-3 min-w-[80px]" onClick={() => openSheet('custom_main_cat')}>
+            <button className="flex flex-col items-center gap-3 min-w-80" onClick={() => openSheet('custom_main_cat')}>
               <div className="w-20 h-20 rounded-lg flex items-center justify-center btn-3d bg-surface text-light">
                 <Plus size={36} />
               </div>
@@ -123,7 +123,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
         </div>
 
         {mainCategory && (
-          <div className="mb-8 animate-[slideUp_0.2s]">
+          <div className="mb-8" style={{ animation: 'slideUp 0.2s' }}>
             <div className="text-muted font-bold mb-4 text-center text-lg">子分類</div>
             <div className="flex flex-wrap justify-center gap-3">
               {categories[mainCategory].map(sub => (
@@ -202,7 +202,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
       </div>
 
       {showKeypad && (
-        <div className="absolute bottom-0 left-0 w-full z-20 animate-[slideUp_0.3s]">
+        <div className="absolute bottom-0 left-0 w-full z-20" style={{ animation: 'slideUp 0.3s' }}>
           <CalculatorKeypad 
             type={type} 
             onConfirm={handleConfirm} 

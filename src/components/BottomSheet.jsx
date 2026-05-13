@@ -17,7 +17,7 @@ export default function BottomSheet({ isOpen, onClose, title, options, onSelect,
   const gridClass = (type === 'unit') ? 'grid-4' : 'grid-2';
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col justify-end">
+    <div className="fixed inset-0 z-200 flex flex-col justify-end">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
@@ -25,7 +25,7 @@ export default function BottomSheet({ isOpen, onClose, title, options, onSelect,
       />
       
       {/* Sheet Content */}
-      <div className="relative bg-white w-full max-w-[480px] mx-auto rounded-t-[40px] shadow-2xl flex flex-col max-h-[85vh] animate-[slideUp_0.3s_ease-out]">
+      <div className="relative bg-white w-full mx-auto rounded-t-3xl shadow-lg flex flex-col" style={{ maxWidth: '480px', maxHeight: '85vh', animation: 'slideUp 0.3s ease-out' }}>
         <div className="flex justify-between items-center p-6 border-b border-gray-50">
           <h3 className="font-bold text-xl">{title}</h3>
           <button onClick={onClose} className="btn-3d w-10 h-10"><X size={24} /></button>
@@ -52,11 +52,11 @@ export default function BottomSheet({ isOpen, onClose, title, options, onSelect,
         </div>
 
         {allowAdd && (
-          <div className="p-6 border-t border-gray-50 bg-gray-50/50 pb-[max(env(safe-area-inset-bottom),24px)]">
+          <div className="p-6 border-t border-gray-50 bg-surface" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }}>
             <div className="flex gap-3">
               <input 
                 type="text" 
-                className="flex-1 p-4 bg-white border-none rounded-[20px] shadow-inner outline-none text-lg font-medium"
+                className="flex-1 p-4 bg-white border-none rounded-20 shadow-inner outline-none text-lg font-medium"
                 placeholder="輸入新選項..."
                 value={newItem}
                 onChange={e => setNewItem(e.target.value)}
