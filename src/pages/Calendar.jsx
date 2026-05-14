@@ -1,10 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronRight, ChevronDown, PlusCircle, ScanText, Search, ChevronLeft, Trash2, Edit2, Plus } from 'lucide-react';
-import { 
-  format, addMonths, subMonths, startOfMonth, endOfMonth, 
-  startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, 
-  isSameDay, isToday, isWeekend
-} from 'date-fns';
+import { ChevronRight, ChevronDown, ScanText, Search, ChevronLeft, Trash2, Edit2, Plus } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isWeekend } from 'date-fns';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 import ManualAddModal from '../components/ManualAddModal';
 
@@ -13,179 +9,113 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState({});
-
-  const { transactions, setTransactions } = useApp();
+  const { transactions, deleteTransaction, expenseCategories, incomeCategories } = useApp();
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
-  const handleMonthChange = (e) => {
-    if (e.target.value) {
-      const [year, month] = e.target.value.split('-');
-      setCurrentDate(new Date(parseInt(year), parseInt(month) - 1, 1));
-    }
-  };
-
-  const toggleNode = (nodeId) => {
-    setExpandedNodes(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('確定要刪除這筆紀錄嗎？')) {
-      setTransactions(prev => prev.filter(t => t.id !== id));
-    }
-  };
-
-  const handleEdit = (t) => {
-    // For now just alert, as editing requires a complex state populate in the modal
-    alert(`編輯功能建置中: ${t.mainCategory} - ${t.amount}`);
-  };
-
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
-    return eachDayOfInterval({ start: startDate, end: endDate });
+    return eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
   }, [currentDate]);
 
   const dailyData = useMemo(() => {
-    const balances = {};
+    const map = {};
     transactions.forEach(t => {
-      const dateKey = t.date;
-      if (!balances[dateKey]) balances[dateKey] = { income: 0, expense: 0, tree: {} };
-      const dayData = balances[dateKey];
-      if (t.type === 'income') dayData.income += t.amount;
-      else dayData.expense += t.amount;
-
-      if (!dayData.tree[t.mainCategory]) {
-        dayData.tree[t.mainCategory] = { amount: 0, type: t.type, subCategories: {} };
-      }
-      dayData.tree[t.mainCategory].amount += t.amount;
-      
-      const subCat = t.subCategory || '未分類';
-      if (!dayData.tree[t.mainCategory].subCategories[subCat]) {
-        dayData.tree[t.mainCategory].subCategories[subCat] = { amount: 0, transactions: [] };
-      }
-      dayData.tree[t.mainCategory].subCategories[subCat].amount += t.amount;
-      dayData.tree[t.mainCategory].subCategories[subCat].transactions.push(t);
+      if (!map[t.date]) map[t.date] = { income: 0, expense: 0, tree: {} };
+      const day = map[t.date];
+      if (t.type === 'income') day.income += t.amount; else day.expense += t.amount;
+      if (!day.tree[t.mainCategory]) day.tree[t.mainCategory] = { amount: 0, type: t.type, sub: {} };
+      day.tree[t.mainCategory].amount += t.amount;
+      const sub = t.subCategory || '未分類';
+      if (!day.tree[t.mainCategory].sub[sub]) day.tree[t.mainCategory].sub[sub] = { amount: 0, list: [] };
+      day.tree[t.mainCategory].sub[sub].amount += t.amount;
+      day.tree[t.mainCategory].sub[sub].list.push(t);
     });
-    return balances;
+    return map;
   }, [transactions]);
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-  const selectedDayData = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
+  const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      
-      {/* Header */}
       <div className="flex justify-between items-center p-6 border-b border-gray-50">
-        <button onClick={handlePrevMonth} className="btn-3d w-12 h-12">
-          <ChevronLeft size={28} />
-        </button>
-        <div className="relative">
-          <input 
-            type="month" 
-            className="text-2xl font-bold bg-transparent border-none outline-none cursor-pointer"
-            value={format(currentDate, 'yyyy-MM')}
-            onChange={handleMonthChange}
-          />
-        </div>
-        <button onClick={handleNextMonth} className="btn-3d w-12 h-12">
-          <ChevronRight size={28} />
-        </button>
+        <button onClick={handlePrevMonth} className="btn-3d w-10 h-10"><ChevronLeft size={24} /></button>
+        <span className="text-2xl font-bold">{format(currentDate, 'yyyy年 MM月')}</span>
+        <button onClick={handleNextMonth} className="btn-3d w-10 h-10"><ChevronRight size={24} /></button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="p-4 shrink-0 bg-surface border-b border-gray-50">
-        <div className="calendar-grid-header">
-          <div className="text-expense">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div className="text-expense">六</div>
+      <div className="p-4 bg-surface">
+        <div className="calendar-grid text-center font-bold text-xs text-muted mb-2">
+          {['日','一','二','三','四','五','六'].map((d, i) => <div key={d} className={i===0||i===6 ? 'text-expense':''}>{d}</div>)}
         </div>
         <div className="calendar-grid">
           {calendarDays.map(day => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const data = dailyData[dateStr];
+            const dStr = format(day, 'yyyy-MM-dd');
+            const data = dailyData[dStr];
+            const isSel = isSameDay(day, selectedDate);
+            const isCur = isSameMonth(day, currentDate);
+            const isWk = isWeekend(day);
             const balance = data ? data.income - data.expense : 0;
-            const isSelected = isSameDay(day, selectedDate);
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isWknd = isWeekend(day);
-            
-            // Build classes dynamically
-            let cellClass = "calendar-cell ";
-            if (!isCurrentMonth) cellClass += "opacity-30 ";
-            if (isWknd) cellClass += "weekend weekend-text ";
-            if (isSelected) cellClass = "calendar-cell btn-3d btn-3d-primary shadow-inner";
-
             return (
-              <div 
-                key={day.toString()}
-                className={cellClass}
-                onClick={() => setSelectedDate(day)}
-              >
-                <div className="font-bold text-lg">{format(day, 'd')}</div>
-                {balance !== 0 && (
-                  <div className={`text-xs font-bold ${balance > 0 ? 'text-income' : 'text-expense'}`}>
-                    {balance > 0 ? '+' : ''}{balance}
-                  </div>
-                )}
+              <div key={dStr} className={`calendar-day-cell ${isSel ? 'btn-3d btn-3d-primary' : ''} ${!isCur ? 'opacity-30' : ''}`} onClick={() => setSelectedDate(day)}>
+                <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`}>{format(day, 'd')}</div>
+                <div className={`balance-num ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
+                  {balance !== 0 ? (balance > 0 ? `+${balance}` : balance) : ''}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Daily Details (Scrollable) */}
       <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
-        <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100">
-          <h3 className="font-bold text-xl">{format(selectedDate, 'MM/dd')} 帳目</h3>
-          <div className="font-bold text-lg">
-            結餘: <span className={(selectedDayData.income - selectedDayData.expense) >= 0 ? 'text-income' : 'text-expense'}>
-              {(selectedDayData.income - selectedDayData.expense)}
-            </span>
-          </div>
+        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
+          <h3 className="font-bold text-lg">{format(selectedDate, 'MM/dd')} 帳務</h3>
+          <span className={`font-bold ${selectedDay.income - selectedDay.expense >= 0 ? 'text-income' : 'text-expense'}`}>
+            結餘: {selectedDay.income - selectedDay.expense}
+          </span>
         </div>
-        
-        {Object.keys(selectedDayData.tree).length === 0 ? (
-          <div className="text-center text-light py-10 font-bold text-lg">尚未記錄任何帳務</div>
+
+        {Object.keys(selectedDay.tree).length === 0 ? (
+          <div className="text-center text-light py-20 font-bold">無紀錄</div>
         ) : (
           <div className="flex flex-col gap-4">
-            {Object.entries(selectedDayData.tree).map(([mainCat, mainData]) => {
-              const Icon = CATEGORY_ICONS[mainCat] || CATEGORY_ICONS['default'];
-              const isExpanded = expandedNodes[mainCat];
+            {Object.entries(selectedDay.tree).map(([cat, data]) => {
+              const catConfig = (data.type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
+              const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
+              const exp = expandedNodes[cat];
               return (
-                <div key={mainCat} className="bg-white rounded-lg shadow-sm border border-gray-50 overflow-hidden">
-                  <div className="flex items-center justify-between p-4 bg-surface cursor-pointer" onClick={() => toggleNode(mainCat)}>
+                <div key={cat} className="card-unit overflow-hidden">
+                  <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => setExpandedNodes(p => ({...p, [cat]: !exp}))}>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <Icon size={20} className={mainData.type === 'expense' ? 'text-expense' : 'text-income'} />
+                      <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center">
+                        <Icon size={20} className={data.type === 'expense' ? 'text-expense' : 'text-income'} />
                       </div>
-                      <span className="font-bold text-xl">{mainCat}</span>
+                      <span className="font-bold">{cat}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`font-bold text-xl ${mainData.type === 'expense' ? 'text-expense' : 'text-income'}`}>{mainData.amount}</span>
-                      {isExpanded ? <ChevronDown size={24} className="text-light"/> : <ChevronRight size={24} className="text-light"/>}
+                    <div className="flex items-center gap-2">
+                      <span className={`font-bold ${data.type === 'expense' ? 'text-expense' : 'text-income'}`}>{data.amount}</span>
+                      {exp ? <ChevronDown size={20} className="text-light" /> : <ChevronRight size={20} className="text-light" />}
                     </div>
                   </div>
-
-                  {isExpanded && Object.entries(mainData.subCategories).map(([subCat, subData]) => (
-                    <div key={subCat} className="border-t border-gray-50">
-                      <div className="p-3 pl-12 font-bold text-muted flex justify-between items-center bg-white">
-                        <span>{subCat}</span>
+                  {exp && Object.entries(data.sub).map(([subName, subData]) => (
+                    <div key={subName} className="border-t border-gray-50 bg-surface/50">
+                      <div className="p-2 pl-12 text-sm font-bold text-muted flex justify-between">
+                        <span>{subName}</span>
                         <span>{subData.amount}</span>
                       </div>
-                      {subData.transactions.map(t => (
-                        <div key={t.id} className="flex items-center justify-between p-3 pl-16 pr-6 bg-surface">
+                      {subData.list.map(t => (
+                        <div key={t.id} className="flex justify-between items-center p-2 pl-14 border-t border-gray-50">
                           <div className="flex flex-col">
-                            <span className="font-medium text-main">{t.mainStore || t.payment || '一般支出'}</span>
-                            <span className="text-xs text-muted mt-1">{t.item} {t.note}</span>
+                            <span className="text-sm font-bold">{t.mainStore || t.payment}</span>
+                            <span className="text-xs text-light">{t.item} {t.note}</span>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <span className="font-bold text-muted">{t.amount}</span>
-                            <div className="flex gap-2">
-                              <button onClick={() => handleEdit(t)} className="text-light cursor-pointer"><Edit2 size={18} /></button>
-                              <button onClick={() => handleDelete(t.id)} className="text-expense cursor-pointer"><Trash2 size={18} /></button>
-                            </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-sm">{t.amount}</span>
+                            <button onClick={() => deleteTransaction(t.id)} className="text-expense"><Trash2 size={16} /></button>
                           </div>
                         </div>
                       ))}
@@ -198,11 +128,10 @@ export default function Calendar() {
         )}
       </div>
 
-      {/* Floating Action Buttons */}
-      <div className="absolute bottom-6 left-0 w-full px-6 flex justify-between items-center z-10 pointer-events-none">
-        <button className="btn-3d w-14 h-14 pointer-events-auto" onClick={() => alert('搜尋功能建置中')}><Search size={28} className="text-muted" /></button>
+      <div className="absolute bottom-6 left-0 w-full px-10 flex justify-between z-10 pointer-events-none">
+        <button className="btn-3d w-14 h-14 pointer-events-auto bg-white"><Search size={28} className="text-muted" /></button>
         <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary w-20 h-20 pointer-events-auto"><Plus size={40} /></button>
-        <button className="btn-3d w-14 h-14 pointer-events-auto" onClick={() => alert('辨識功能建置中')}><ScanText size={28} className="text-muted" /></button>
+        <button className="btn-3d w-14 h-14 pointer-events-auto bg-white"><ScanText size={28} className="text-muted" /></button>
       </div>
 
       <ManualAddModal isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} initialDate={selectedDateStr} />
