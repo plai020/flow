@@ -120,7 +120,7 @@ export default function Home() {
           {Object.entries(filtered.groups).map(([cat, data]) => {
             const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
             const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
-            const exp = expandedNodes[cat] || mode === 'budget'; // Auto expand in budget mode as requested
+            const exp = expandedNodes[cat];
             return (
               <div key={cat} className="card-unit overflow-hidden">
                 <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => toggleNode(cat)}>
