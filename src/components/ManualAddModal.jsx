@@ -28,7 +28,10 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     addTransaction, deleteTransaction
   } = useApp();
 
-  // Handle Edit Mode
+  const categories = type === 'expense' ? expenseCategories : incomeCategories;
+  const themeColor = type === 'expense' ? 'var(--color-expense)' : 'var(--color-income)';
+
+  // Handle Edit Mode / Initialization
   useEffect(() => {
     if (editData && isOpen) {
       setType(editData.type || 'expense');
@@ -41,8 +44,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       setPayment(editData.payment || '');
       setNote(editData.note || '');
       setAmount(editData.amount || 0);
-    } else if (!editData) {
-      // Reset if not editing
+    } else if (isOpen && !editData) {
       setMainCategory('');
       setSubCategory('');
       setMainStore('');
@@ -54,21 +56,22 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     }
   }, [editData, isOpen]);
 
+  // Fix Crash: Ensure subCategory is reset correctly when mainCategory or categories change
   useEffect(() => { 
-    if (mainCategory && categories[mainCategory] && !categories[mainCategory].sub.includes(subCategory)) {
-       setSubCategory(''); 
+    if (mainCategory && categories[mainCategory]) {
+       const subList = categories[mainCategory].sub || [];
+       if (!subList.includes(subCategory)) {
+         setSubCategory(''); 
+       }
+    } else {
+       setSubCategory('');
     }
-  }, [mainCategory]);
+  }, [mainCategory, categories]);
 
   if (!isOpen) return null;
 
-  const categories = type === 'expense' ? expenseCategories : incomeCategories;
-  const themeColor = type === 'expense' ? 'var(--color-expense)' : 'var(--color-income)';
-
   const handleConfirm = (finalAmount) => {
-    if (editData) {
-      deleteTransaction(editData.id); // Simple edit: delete and re-add
-    }
+    if (editData) deleteTransaction(editData.id);
     addTransaction({ type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
     onClose();
   };
@@ -149,8 +152,8 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
           </div>
         </div>
 
-        {/* Fix for White Screen: Check if mainCategory exists in current type categories */}
-        {mainCategory && categories[mainCategory] && (
+        {/* Subcategories - Crash Proof */}
+        {mainCategory && categories[mainCategory] && categories[mainCategory].sub && (
           <div className="mb-8 p-4 bg-surface rounded-2xl" style={{ animation: 'panelUp 0.3s ease-out' }}>
             <div className="text-muted font-bold mb-4 text-center text-lg">子分類</div>
             <div className="flex flex-wrap justify-center gap-3">
@@ -174,27 +177,27 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
           </div>
         )}
 
-        {/* Side by Side Inputs */}
+        {/* Side by Side Inputs - FORCED FLEX LAYOUT */}
         <div className="flex flex-col gap-6 mb-10">
-          <div className="grid-2 gap-4">
-            <div className="flex flex-col gap-2 cursor-pointer" onClick={() => openSheet('store')}>
+          <div className="flex gap-4 w-full">
+            <div className="flex flex-col gap-2 flex-1 cursor-pointer" style={{ width: '50%' }} onClick={() => openSheet('store')}>
               <label className="text-muted font-bold text-center">商店</label>
-              <div className="btn-3d py-4 text-xl font-bold bg-white">{mainStore || '選擇商店'}</div>
+              <div className="btn-3d py-4 text-xl font-bold bg-white w-full overflow-hidden text-ellipsis whitespace-nowrap">{mainStore || '選擇商店'}</div>
             </div>
-            <div className={`flex flex-col gap-2 cursor-pointer ${!mainStore && 'opacity-50'}`} onClick={() => mainStore && openSheet('branch')}>
+            <div className={`flex flex-col gap-2 flex-1 cursor-pointer ${!mainStore && 'opacity-50'}`} style={{ width: '50%' }} onClick={() => mainStore && openSheet('branch')}>
               <label className="text-muted font-bold text-center">分店</label>
-              <div className="btn-3d py-4 text-xl font-bold bg-white">{branch || '選擇分店'}</div>
+              <div className="btn-3d py-4 text-xl font-bold bg-white w-full overflow-hidden text-ellipsis whitespace-nowrap">{branch || '選擇分店'}</div>
             </div>
           </div>
 
-          <div className="grid-2 gap-4">
-            <div className="flex flex-col gap-2">
+          <div className="flex gap-4 w-full">
+            <div className="flex flex-col gap-2 flex-1" style={{ width: '50%' }}>
               <label className="text-muted font-bold text-center">物品</label>
               <input value={item} onChange={e => setItem(e.target.value)} className="btn-3d py-4 text-center bg-white w-full border-none" placeholder="輸入名稱" />
             </div>
-            <div className="flex flex-col gap-2 cursor-pointer" onClick={() => openSheet('payment')}>
+            <div className="flex flex-col gap-2 flex-1 cursor-pointer" style={{ width: '50%' }} onClick={() => openSheet('payment')}>
               <label className="text-muted font-bold text-center">支付</label>
-              <div className="btn-3d py-4 text-xl font-bold bg-white">{payment || '選擇方式'}</div>
+              <div className="btn-3d py-4 text-xl font-bold bg-white w-full overflow-hidden text-ellipsis whitespace-nowrap">{payment || '選擇方式'}</div>
             </div>
           </div>
 
@@ -205,7 +208,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
 
           <div className="flex justify-center py-4">
             <div className="flex flex-col items-center gap-2">
-              <span className="text-muted font-bold">金額: ${amount}</span>
+              <span className="text-muted font-bold text-lg">金額: ${amount}</span>
               <button 
                 className={`btn-3d w-20 h-20 rounded-full ${showKeypad ? (type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income') : 'bg-surface text-light'}`} 
                 onClick={() => setShowKeypad(!showKeypad)}
@@ -233,7 +236,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
         </div>
       )}
 
-      {/* Final Action Button for Edit/Save */}
+      {/* Final Action Button */}
       {amount > 0 && !showKeypad && (
          <div className="p-6 bg-white border-t border-gray-100">
             <button 
