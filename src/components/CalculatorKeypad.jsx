@@ -89,10 +89,10 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
       </div>
 
       <button 
-        className={`w-full py-6 rounded-2xl font-bold text-3xl shadow-lg flex items-center justify-center gap-4 ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
+        className={`w-full py-10 rounded-3xl font-bold text-4xl shadow-xl flex items-center justify-center gap-6 ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
         onClick={() => onConfirm(safeCalculate(expression))}
       >
-        輸入 <CornerDownLeft size={32} />
+        確認輸入 <CornerDownLeft size={40} />
       </button>
     </div>
   );
