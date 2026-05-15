@@ -41,17 +41,19 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
+      {/* Header */}
       <div className="flex justify-between items-center p-6 border-b border-gray-50">
-        <button onClick={handlePrevMonth} className="btn-3d w-10 h-10"><ChevronLeft size={24} /></button>
+        <button onClick={handlePrevMonth} className="btn-3d p-2"><ChevronLeft size={24} /></button>
         <span className="text-2xl font-bold">{format(currentDate, 'yyyy年 MM月')}</span>
-        <button onClick={handleNextMonth} className="btn-3d w-10 h-10"><ChevronRight size={24} /></button>
+        <button onClick={handleNextMonth} className="btn-3d p-2"><ChevronRight size={24} /></button>
       </div>
 
-      <div className="p-4 bg-surface">
-        <div className="calendar-grid text-center font-bold text-xs text-muted mb-2">
+      {/* Jitter-free Calendar Grid */}
+      <div className="p-4 bg-surface shrink-0">
+        <div className="grid-7 text-center font-bold text-sm text-muted mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
           {['日','一','二','三','四','五','六'].map((d, i) => <div key={d} className={i===0||i===6 ? 'text-expense':''}>{d}</div>)}
         </div>
-        <div className="calendar-grid">
+        <div className="grid-7" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
           {calendarDays.map(day => {
             const dStr = format(day, 'yyyy-MM-dd');
             const data = dailyData[dStr];
@@ -60,9 +62,14 @@ export default function Calendar() {
             const isWk = isWeekend(day);
             const balance = data ? data.income - data.expense : 0;
             return (
-              <div key={dStr} className={`calendar-day-cell ${isSel ? 'btn-3d btn-3d-primary' : ''} ${!isCur ? 'opacity-30' : ''}`} onClick={() => setSelectedDate(day)}>
-                <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`}>{format(day, 'd')}</div>
-                <div className={`balance-num ${balance >= 0 ? 'text-income' : 'text-expense'}`}>
+              <div 
+                key={dStr} 
+                className={`calendar-day-cell ${isSel ? 'btn-3d-primary' : 'bg-white'} ${!isCur ? 'opacity-30' : ''}`} 
+                style={{ height: '70px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                onClick={() => setSelectedDate(day)}
+              >
+                <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`} style={{ fontWeight: 700, fontSize: '18px' }}>{format(day, 'd')}</div>
+                <div className={`balance-num ${balance >= 0 ? 'text-income' : 'text-expense'}`} style={{ fontSize: '10px', fontWeight: 700, height: '12px' }}>
                   {balance !== 0 ? (balance > 0 ? `+${balance}` : balance) : ''}
                 </div>
               </div>
@@ -71,16 +78,17 @@ export default function Calendar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pt-4 pb-32">
+      {/* Scrollable Details */}
+      <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4">
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
-          <h3 className="font-bold text-lg">{format(selectedDate, 'MM/dd')} 帳務</h3>
-          <span className={`font-bold ${selectedDay.income - selectedDay.expense >= 0 ? 'text-income' : 'text-expense'}`}>
+          <h3 className="font-bold text-xl">{format(selectedDate, 'MM/dd')} 帳務</h3>
+          <span className={`font-bold text-xl ${selectedDay.income - selectedDay.expense >= 0 ? 'text-income' : 'text-expense'}`}>
             結餘: {selectedDay.income - selectedDay.expense}
           </span>
         </div>
 
         {Object.keys(selectedDay.tree).length === 0 ? (
-          <div className="text-center text-light py-20 font-bold">無紀錄</div>
+          <div className="text-center text-light py-20 font-bold text-xl">尚無記錄</div>
         ) : (
           <div className="flex flex-col gap-4">
             {Object.entries(selectedDay.tree).map(([cat, data]) => {
@@ -90,32 +98,35 @@ export default function Calendar() {
               return (
                 <div key={cat} className="card-unit overflow-hidden">
                   <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => setExpandedNodes(p => ({...p, [cat]: !exp}))}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center">
-                        <Icon size={20} className={data.type === 'expense' ? 'text-expense' : 'text-income'} />
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center">
+                        <Icon size={28} className={data.type === 'expense' ? 'text-expense' : 'text-income'} />
                       </div>
-                      <span className="font-bold">{cat}</span>
+                      <span className="font-bold text-xl">{cat}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold ${data.type === 'expense' ? 'text-expense' : 'text-income'}`}>{data.amount}</span>
-                      {exp ? <ChevronDown size={20} className="text-light" /> : <ChevronRight size={20} className="text-light" />}
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold text-xl ${data.type === 'expense' ? 'text-expense' : 'text-income'}`}>{data.amount}</span>
+                      {exp ? <ChevronDown size={28} className="text-light" /> : <ChevronRight size={28} className="text-light" />}
                     </div>
                   </div>
                   {exp && Object.entries(data.sub).map(([subName, subData]) => (
                     <div key={subName} className="border-t border-gray-50 bg-surface/50">
-                      <div className="p-2 pl-12 text-sm font-bold text-muted flex justify-between">
+                      <div className="p-3 pl-14 text-lg font-bold text-muted flex justify-between">
                         <span>{subName}</span>
                         <span>{subData.amount}</span>
                       </div>
                       {subData.list.map(t => (
-                        <div key={t.id} className="flex justify-between items-center p-2 pl-14 border-t border-gray-50">
+                        <div key={t.id} className="flex justify-between items-center p-3 pl-16 border-t border-gray-50">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold">{t.mainStore || t.payment}</span>
-                            <span className="text-xs text-light">{t.item} {t.note}</span>
+                            <span className="text-lg font-bold">{t.mainStore || t.payment}</span>
+                            <span className="text-sm text-light">{t.item} {t.note}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="font-bold text-sm">{t.amount}</span>
-                            <button onClick={() => deleteTransaction(t.id)} className="text-expense"><Trash2 size={16} /></button>
+                          <div className="flex items-center gap-4">
+                            <span className="font-bold text-xl">{t.amount}</span>
+                            <div className="flex gap-2">
+                              <button className="text-light"><Edit2 size={20} /></button>
+                              <button onClick={() => deleteTransaction(t.id)} className="text-expense"><Trash2 size={20} /></button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -128,10 +139,11 @@ export default function Calendar() {
         )}
       </div>
 
-      <div className="absolute bottom-6 left-0 w-full px-10 flex justify-between z-10 pointer-events-none">
-        <button className="btn-3d w-14 h-14 pointer-events-auto bg-white"><Search size={28} className="text-muted" /></button>
-        <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary w-20 h-20 pointer-events-auto"><Plus size={40} /></button>
-        <button className="btn-3d w-14 h-14 pointer-events-auto bg-white"><ScanText size={28} className="text-muted" /></button>
+      {/* Sticky Bottom Actions */}
+      <div className="sticky-actions">
+        <button className="btn-3d w-16 h-16 bg-white shadow-lg"><Search size={32} className="text-muted" /></button>
+        <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary w-22 h-22 rounded-full shadow-lg" style={{ width: '80px', height: '80px' }}><Plus size={48} /></button>
+        <button className="btn-3d w-16 h-16 bg-white shadow-lg"><ScanText size={32} className="text-muted" /></button>
       </div>
 
       <ManualAddModal isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} initialDate={selectedDateStr} />

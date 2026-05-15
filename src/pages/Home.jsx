@@ -69,69 +69,72 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      <div className="fixed-header">
-        <div className="flex justify-center p-4 gap-4">
+      {/* Compact Header with Full-Width Controls */}
+      <div className="bg-white px-4 pt-2 border-b border-gray-50 z-50">
+        <div className="flex justify-between gap-4 mb-2">
           {['month', 'quarter', 'year'].map(p => (
-            <button key={p} className={`btn-3d px-6 py-2 font-bold ${periodType === p ? 'btn-3d-primary shadow-inner' : 'text-muted'}`} onClick={() => setPeriodType(p)}>
+            <button key={p} className={`btn-3d flex-1 py-2 font-bold text-lg ${periodType === p ? 'btn-3d-primary' : 'text-muted'}`} onClick={() => setPeriodType(p)}>
               {p === 'month' ? '月' : p === 'quarter' ? '季' : '年'}
             </button>
           ))}
         </div>
-        <div className="flex justify-center items-center py-2 gap-4">
-          <button onClick={prev} className="btn-3d w-10 h-10"><ChevronLeft size={20} /></button>
-          <span className="text-xl font-bold">{label()}</span>
-          <button onClick={next} className="btn-3d w-10 h-10"><ChevronRight size={20} /></button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto pt-32 pb-20">
-        <div className="flex justify-center px-6 mb-6 gap-4">
-          <button className={`btn-3d flex-1 py-3 font-bold ${type === 'expense' ? 'btn-3d-expense' : 'text-muted'}`} onClick={() => setType('expense')}>支出</button>
-          <button className={`btn-3d flex-1 py-3 font-bold ${type === 'income' ? 'btn-3d-income' : 'text-muted'}`} onClick={() => setType('income')}>收入</button>
+        
+        <div className="flex justify-between items-center py-2 mb-2">
+          <button onClick={prev} className="btn-3d p-2"><ChevronLeft size={24} /></button>
+          <span className="text-2xl font-bold">{label()}</span>
+          <button onClick={next} className="btn-3d p-2"><ChevronRight size={24} /></button>
         </div>
 
-        <div className="flex justify-center gap-6 mb-6">
+        <div className="flex justify-between gap-4 mb-1">
+          <button className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'expense' ? 'btn-3d-expense' : 'text-muted'}`} onClick={() => setType('expense')}>支出</button>
+          <button className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'income' ? 'btn-3d-income' : 'text-muted'}`} onClick={() => setType('income')}>收入</button>
+        </div>
+
+        <div className="flex justify-center gap-8 py-2">
           {['actual', 'budget'].map(m => (
-            <button key={m} className={`btn-3d px-10 py-3 ${mode === m ? `font-bold text-xl shadow-inner bg-surface ${activeColorClass}` : 'text-light'}`} onClick={() => setMode(m)}>
+            <button key={m} className={`font-bold text-xl transition-all ${mode === m ? activeColorClass : 'text-light'}`} onClick={() => setMode(m)}>
               {m === 'actual' ? '實際' : '預算'}
             </button>
           ))}
         </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto pt-4 pb-24">
+        {/* Chart Area */}
         <div className="flex justify-center mb-6">
-          <div className="w-64 h-64 p-6 bg-white rounded-full shadow-lg border border-gray-50 flex items-center justify-center">
+          <div className="w-72 h-72 p-6 bg-white rounded-full shadow-lg border border-gray-50 flex items-center justify-center">
             {filtered.total > 0 ? <Pie data={chartData} options={{ plugins: { legend: { display: false } } }} /> : <span className="text-light font-bold">無資料</span>}
           </div>
         </div>
 
         <div className="mx-6 p-4 card-unit text-center mb-6 bg-surface">
           <div className="text-muted font-bold text-sm mb-1">總計 ({mode === 'actual' ? '實際' : '預算'})</div>
-          <div className="text-3xl font-bold" style={{ color: `var(--color-${type})` }}>${filtered.total.toLocaleString()}</div>
+          <div className="text-4xl font-bold" style={{ color: `var(--color-${type})` }}>${filtered.total.toLocaleString()}</div>
         </div>
 
         <div className="px-6 flex flex-col gap-4">
           {Object.entries(filtered.groups).map(([cat, data]) => {
             const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
             const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
-            const exp = expandedNodes[cat];
+            const exp = expandedNodes[cat] || mode === 'budget'; // Auto expand in budget mode as requested
             return (
               <div key={cat} className="card-unit overflow-hidden">
                 <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => toggleNode(cat)}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface">
-                      <Icon size={20} className={activeColorClass} />
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-surface">
+                      <Icon size={24} className={activeColorClass} />
                     </div>
-                    <span className="font-bold text-lg">{cat}</span>
+                    <span className="font-bold text-xl">{cat}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-lg">${data.amount.toLocaleString()}</span>
-                    {exp ? <ChevronDown size={20} className="text-light" /> : <ChevronRightIcon size={20} className="text-light" />}
+                    <span className="font-bold text-xl">${data.amount.toLocaleString()}</span>
+                    {exp ? <ChevronDown size={24} className="text-light" /> : <ChevronRightIcon size={24} className="text-light" />}
                   </div>
                 </div>
                 {exp && (
                   <div className="bg-surface/30 border-t border-gray-50">
                     {Object.entries(data.sub).map(([sub, amt]) => (
-                      <div key={sub} className="flex justify-between p-2 pl-14 text-sm border-b border-gray-50 last:border-0">
+                      <div key={sub} className="flex justify-between p-3 pl-16 text-lg border-b border-gray-50 last:border-0">
                         <span className="font-bold text-muted">{sub}</span>
                         <span className="font-bold">${amt.toLocaleString()}</span>
                       </div>
