@@ -82,7 +82,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       case 'payment': return { title: '支付方式', options: payments, type: 'payment', onSelect: setPayment, onAddNew: (val) => { setPayments(p => [...p, val]); setPayment(val); } };
       case 'unit': return { title: '單位', options: commonUnits, type: 'unit', onSelect: (v) => setNote(p => p+v), onAddNew: (v) => { setCommonUnits(p => [...p, v]); setNote(p => p+v); } };
       case 'icon_picker': return { title: '選擇圖示', options: Object.keys(CATEGORY_ICONS).filter(k => k !== 'default'), type: 'icon', onSelect: (icon) => { const name = prompt('輸入新分類名稱'); if(name) addCustomCategory(type, name, icon); }, allowAdd: false };
-      case 'sub_add': return { title: `新增 ${mainCategory} 子分類`, options: [], type: 'sub', onSelect: () => {}, onAddNew: (val) => { addSubCategory(type, mainCategory, val); setSubCategory(val); } };
+      case 'sub_add': return { title: `新增 ${mainCategory} 子分類`, options: [], type: 'sub', onSelect: () => {}, onAddNew: (val) => { addSubCategory(type, mainCategory, val); setSubCategory(val); closeSheet(); } };
       default: return { title: '', options: [] };
     }
   };
@@ -207,7 +207,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       {amount > 0 && !showKeypad && (
          <div className="p-6 bg-white border-t border-gray-100">
             <button 
-              className={`w-full py-8 rounded-3xl font-bold text-3xl text-white shadow-xl ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
+              className={`w-full py-10 rounded-3xl font-bold text-5xl text-white shadow-xl ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
               onClick={() => handleConfirm(amount)}
             >
               {editData ? '更新帳務' : '完成新增'}
