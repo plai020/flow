@@ -17,7 +17,8 @@ export default function BottomSheet({
   };
 
   const isStore = type === 'store';
-  const gridClass = (type === 'unit') ? 'grid-4' : 'grid-2';
+  // Use 3 columns for everything now as requested
+  const gridClass = 'grid-3';
 
   return (
     <div className="fixed inset-0 z-200 flex flex-col justify-end">
@@ -35,12 +36,12 @@ export default function BottomSheet({
               <div className="text-muted font-bold text-lg mb-4 flex items-center gap-2">
                 <Star size={20} className="fill-yellow-400 text-yellow-400" /> 常用商店
               </div>
-              <div className="grid-2 gap-4">
+              <div className="grid-3 gap-3">
                 {options.favorites.map(opt => (
-                  <button key={opt} className="btn-3d py-5 px-4 relative flex justify-center items-center" onClick={() => { onSelect(opt); onClose(); }}>
-                    <span className="font-bold text-xl">{opt}</span>
-                    <div className="absolute right-3" onClick={(e) => { e.stopPropagation(); onToggleFavorite(opt); }}>
-                      <Star size={24} className="fill-yellow-400 text-yellow-400" />
+                  <button key={opt} className="btn-3d py-4 px-2 relative flex flex-col justify-center items-center min-h-24" onClick={() => { onSelect(opt); onClose(); }}>
+                    <span className="font-bold text-lg text-center leading-tight mb-2">{opt}</span>
+                    <div onClick={(e) => { e.stopPropagation(); onToggleFavorite(opt); }}>
+                      <Star size={20} className="fill-yellow-400 text-yellow-400" />
                     </div>
                   </button>
                 ))}
@@ -51,12 +52,12 @@ export default function BottomSheet({
           {isStore && options.recents?.length > 0 && (
             <div className="mb-8">
               <div className="text-muted font-bold text-lg mb-4">最近使用</div>
-              <div className="grid-2 gap-4">
+              <div className="grid-3 gap-3">
                 {options.recents.map(opt => (
-                  <button key={opt} className="btn-3d py-5 px-4 relative flex justify-center items-center" onClick={() => { onSelect(opt); onClose(); }}>
-                    <span className="font-bold text-xl">{opt}</span>
-                    <div className="absolute right-3" onClick={(e) => { e.stopPropagation(); onToggleFavorite(opt); }}>
-                      <Star size={24} className="text-gray-300" />
+                  <button key={opt} className="btn-3d py-4 px-2 relative flex flex-col justify-center items-center min-h-24" onClick={() => { onSelect(opt); onClose(); }}>
+                    <span className="font-bold text-lg text-center leading-tight mb-2">{opt}</span>
+                    <div onClick={(e) => { e.stopPropagation(); onToggleFavorite(opt); }}>
+                      <Star size={20} className="text-gray-300" />
                     </div>
                   </button>
                 ))}
@@ -66,32 +67,32 @@ export default function BottomSheet({
 
           {!isStore && (
             <div className={gridClass}>
-              {options.map(opt => (
-                <button key={opt} className="btn-3d py-5 text-xl font-bold text-center" onClick={() => { onSelect(opt); onClose(); }}>
+              {(Array.isArray(options) ? options : []).map(opt => (
+                <button key={opt} className="btn-3d py-5 text-lg font-bold text-center px-2 flex items-center justify-center min-h-20" onClick={() => { onSelect(opt); onClose(); }}>
                   {opt}
                 </button>
               ))}
             </div>
           )}
 
-          {(!isStore && options.length === 0) || (isStore && options.favorites?.length === 0 && options.recents?.length === 0) ? (
+          {(!isStore && (!options || options.length === 0)) || (isStore && options.favorites?.length === 0 && options.recents?.length === 0) ? (
             <div className="text-center text-gray-400 py-10 font-bold text-xl">尚無選項</div>
           ) : null}
         </div>
 
         {allowAdd && (
-          <div className="p-8 border-t border-gray-50 bg-surface" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 30px)' }}>
-            <div className="flex gap-4">
+          <div className="p-8 px-10 border-t border-gray-50 bg-surface" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 30px)' }}>
+            <div className="flex gap-4 items-center">
               <input 
                 type="text" 
-                className="flex-1 p-5 bg-white border-none rounded-2xl shadow-inner outline-none text-xl font-bold"
+                className="flex-1 p-5 bg-white border-none rounded-2xl shadow-inner outline-none text-xl font-bold px-6"
                 placeholder="輸入新選項..."
                 value={newItem}
                 onChange={e => setNewItem(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
               />
-              <button className="btn-3d btn-3d-primary px-8 py-5 font-bold text-xl flex items-center gap-2" onClick={handleAdd}>
-                <Plus size={28} /> 新增
+              <button className="btn-3d btn-3d-primary w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" onClick={handleAdd}>
+                <Plus size={32} />
               </button>
             </div>
           </div>

@@ -110,6 +110,18 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
+  const addSubCategory = (type, mainCat, subName) => {
+    const setter = type === 'expense' ? setExpenseCategories : setIncomeCategories;
+    setter(prev => {
+      const target = prev[mainCat];
+      if (!target) return prev;
+      return {
+        ...prev,
+        [mainCat]: { ...target, sub: [...target.sub, subName] }
+      };
+    });
+  };
+
   const value = {
     transactions, addTransaction, deleteTransaction,
     budgets, setBudgets,
@@ -120,7 +132,7 @@ export const AppProvider = ({ children }) => {
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
-    addCustomCategory
+    addCustomCategory, addSubCategory
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

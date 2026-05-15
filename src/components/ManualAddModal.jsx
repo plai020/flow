@@ -20,7 +20,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   const [sheetConfig, setSheetConfig] = useState({ isOpen: false, type: null });
 
   const { 
-    expenseCategories, incomeCategories, addCustomCategory,
+    expenseCategories, incomeCategories, addCustomCategory, addSubCategory,
     favoriteStores, recentStores, toggleFavoriteStore,
     storeBranches, setStoreBranches,
     payments, setPayments,
@@ -56,7 +56,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     }
   }, [editData, isOpen]);
 
-  // Fix Crash: Ensure subCategory is reset correctly when mainCategory or categories change
+  // Sync subCategory when mainCategory changes
   useEffect(() => { 
     if (mainCategory && categories[mainCategory]) {
        const subList = categories[mainCategory].sub || [];
@@ -91,6 +91,14 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   };
 
   const sheetData = getSheetData();
+
+  const handleAddSub = () => {
+    const s = prompt('新增子分類名稱');
+    if (s && mainCategory) {
+      addSubCategory(type, mainCategory, s);
+      setSubCategory(s);
+    }
+  };
 
   return (
     <div className="modal-overlay">
@@ -152,12 +160,12 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
           </div>
         </div>
 
-        {/* Subcategories - Crash Proof */}
-        {mainCategory && categories[mainCategory] && categories[mainCategory].sub && (
+        {/* Subcategories */}
+        {mainCategory && categories[mainCategory] && (
           <div className="mb-8 p-4 bg-surface rounded-2xl" style={{ animation: 'panelUp 0.3s ease-out' }}>
             <div className="text-muted font-bold mb-4 text-center text-lg">子分類</div>
             <div className="flex flex-wrap justify-center gap-3">
-              {categories[mainCategory].sub.map(sub => (
+              {(categories[mainCategory].sub || []).map(sub => (
                 <button 
                   key={sub} 
                   className={`btn-3d px-6 py-3 font-bold text-lg ${subCategory === sub ? 'shadow-inner' : ''}`} 
@@ -169,7 +177,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
               ))}
               <button 
                 className="btn-3d px-6 py-3 font-bold text-lg text-light"
-                onClick={() => { const s = prompt('新增子分類名稱'); if(s) setStoreBranches(p => ({...p, [mainCategory]: [...(p[mainCategory]||[]), s]})); }}
+                onClick={handleAddSub}
               >
                 ＋新增
               </button>
@@ -177,7 +185,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
           </div>
         )}
 
-        {/* Side by Side Inputs - FORCED FLEX LAYOUT */}
+        {/* Side by Side Inputs */}
         <div className="flex flex-col gap-6 mb-10">
           <div className="flex gap-4 w-full">
             <div className="flex flex-col gap-2 flex-1 cursor-pointer" style={{ width: '50%' }} onClick={() => openSheet('store')}>
