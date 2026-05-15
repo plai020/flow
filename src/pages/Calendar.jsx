@@ -42,7 +42,7 @@ export default function Calendar() {
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center p-6 border-b border-gray-50">
+      <div className="flex justify-between items-center p-4 border-b border-gray-50">
         <button onClick={handlePrevMonth} className="btn-3d p-2"><ChevronLeft size={24} /></button>
         <span className="text-2xl font-bold">{format(currentDate, 'yyyy年 MM月')}</span>
         <button onClick={handleNextMonth} className="btn-3d p-2"><ChevronRight size={24} /></button>
@@ -65,7 +65,7 @@ export default function Calendar() {
               <div 
                 key={dStr} 
                 className={`calendar-day-cell ${isSel ? 'btn-3d-primary' : 'bg-white'} ${!isCur ? 'opacity-30' : ''}`} 
-                style={{ height: '70px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ height: '55px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 onClick={() => setSelectedDate(day)}
               >
                 <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`} style={{ fontWeight: 700, fontSize: '18px' }}>{format(day, 'd')}</div>
@@ -140,10 +140,10 @@ export default function Calendar() {
       </div>
 
       {/* Sticky Bottom Actions */}
-      <div className="sticky-actions">
-        <button className="btn-3d w-16 h-16 bg-white shadow-lg"><Search size={32} className="text-muted" /></button>
-        <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary w-22 h-22 rounded-full shadow-lg" style={{ width: '80px', height: '80px' }}><Plus size={48} /></button>
-        <button className="btn-3d w-16 h-16 bg-white shadow-lg"><ScanText size={32} className="text-muted" /></button>
+      <div className="sticky-actions" style={{ padding: '0 40px 10px 40px' }}>
+        <button className="btn-3d w-14 h-14 bg-white shadow-lg"><Search size={24} className="text-muted" /></button>
+        <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary rounded-full shadow-lg" style={{ width: '64px', height: '64px' }}><Plus size={32} /></button>
+        <button className="btn-3d w-14 h-14 bg-white shadow-lg"><ScanText size={24} className="text-muted" /></button>
       </div>
 
       <ManualAddModal isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} initialDate={selectedDateStr} />
