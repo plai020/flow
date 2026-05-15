@@ -42,10 +42,10 @@ export default function Calendar() {
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-50">
-        <button onClick={handlePrevMonth} className="btn-3d p-2"><ChevronLeft size={24} /></button>
-        <span className="text-2xl font-bold">{format(currentDate, 'yyyy年 MM月')}</span>
-        <button onClick={handleNextMonth} className="btn-3d p-2"><ChevronRight size={24} /></button>
+      <div className="flex justify-between items-center p-2 border-b border-gray-50">
+        <button onClick={handlePrevMonth} className="btn-3d p-1"><ChevronLeft size={20} /></button>
+        <span className="text-xl font-bold">{format(currentDate, 'yyyy年 MM月')}</span>
+        <button onClick={handleNextMonth} className="btn-3d p-1"><ChevronRight size={20} /></button>
       </div>
 
       {/* Jitter-free Calendar Grid */}
@@ -65,11 +65,11 @@ export default function Calendar() {
               <div 
                 key={dStr} 
                 className={`calendar-day-cell ${isSel ? 'btn-3d-primary' : 'bg-white'} ${!isCur ? 'opacity-30' : ''}`} 
-                style={{ height: '55px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ height: '48px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 onClick={() => setSelectedDate(day)}
               >
-                <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`} style={{ fontWeight: 700, fontSize: '18px' }}>{format(day, 'd')}</div>
-                <div className={`balance-num ${balance >= 0 ? 'text-income' : 'text-expense'}`} style={{ fontSize: '10px', fontWeight: 700, height: '12px' }}>
+                <div className={`date-num ${isWk && isCur && !isSel ? 'text-expense' : ''}`} style={{ fontWeight: 700, fontSize: '16px' }}>{format(day, 'd')}</div>
+                <div className={`balance-num ${balance >= 0 ? 'text-income' : 'text-expense'}`} style={{ fontSize: '9px', fontWeight: 700, height: '10px' }}>
                   {balance !== 0 ? (balance > 0 ? `+${balance}` : balance) : ''}
                 </div>
               </div>
