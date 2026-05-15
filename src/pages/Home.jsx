@@ -90,9 +90,13 @@ export default function Home() {
           <button className={`btn-3d flex-1 py-4 font-bold text-xl ${type === 'income' ? 'btn-3d-income' : 'text-muted'}`} onClick={() => setType('income')}>收入</button>
         </div>
 
-        <div className="flex justify-center gap-8 py-2">
+        <div className="flex justify-between gap-6 py-2">
           {['actual', 'budget'].map(m => (
-            <button key={m} className={`font-bold text-xl transition-all ${mode === m ? activeColorClass : 'text-light'}`} onClick={() => setMode(m)}>
+            <button 
+              key={m} 
+              className={`btn-3d flex-1 py-3 font-bold text-2xl shadow-md transition-all ${mode === m ? `shadow-inner bg-surface ${activeColorClass}` : 'text-light'}`} 
+              onClick={() => setMode(m)}
+            >
               {m === 'actual' ? '實際' : '預算'}
             </button>
           ))}
