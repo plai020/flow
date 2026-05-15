@@ -15,7 +15,10 @@ export default function Home() {
   const [expandedNodes, setExpandedNodes] = useState({});
   const { transactions, expenseCategories, incomeCategories } = useApp();
 
-  const toggleNode = (node) => setExpandedNodes(p => ({ ...p, [node]: !p[node] }));
+  const toggleNode = (cat) => {
+    const nodeKey = `${type}-${cat}`;
+    setExpandedNodes(prev => ({ ...prev, [nodeKey]: !prev[nodeKey] }));
+  };
 
   const prev = () => {
     if (periodType === 'month') setCurrentDate(subMonths(currentDate, 1));
@@ -120,7 +123,9 @@ export default function Home() {
           {Object.entries(filtered.groups).map(([cat, data]) => {
             const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
             const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
-            const exp = expandedNodes[cat];
+            const nodeKey = `${type}-${cat}`;
+            const exp = !!expandedNodes[nodeKey];
+            
             return (
               <div key={cat} className="card-unit overflow-hidden">
                 <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => toggleNode(cat)}>
