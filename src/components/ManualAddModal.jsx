@@ -4,7 +4,7 @@ import CalculatorKeypad from './CalculatorKeypad';
 import BottomSheet from './BottomSheet';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 
-export default function ManualAddModal({ isOpen, onClose, initialDate }) {
+export default function ManualAddModal({ isOpen, onClose, initialDate, editData }) {
   const [type, setType] = useState('expense');
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [showKeypad, setShowKeypad] = useState(false);
@@ -16,6 +16,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
   const [item, setItem] = useState('');
   const [payment, setPayment] = useState('');
   const [note, setNote] = useState('');
+  const [amount, setAmount] = useState(0);
   const [sheetConfig, setSheetConfig] = useState({ isOpen: false, type: null });
 
   const { 
@@ -24,18 +25,51 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
-    addTransaction 
+    addTransaction, deleteTransaction
   } = useApp();
 
-  useEffect(() => { setSubCategory(''); }, [mainCategory]);
+  // Handle Edit Mode
+  useEffect(() => {
+    if (editData && isOpen) {
+      setType(editData.type || 'expense');
+      setDate(editData.date);
+      setMainCategory(editData.mainCategory || '');
+      setSubCategory(editData.subCategory || '');
+      setMainStore(editData.mainStore || '');
+      setBranch(editData.branch || '');
+      setItem(editData.item || '');
+      setPayment(editData.payment || '');
+      setNote(editData.note || '');
+      setAmount(editData.amount || 0);
+    } else if (!editData) {
+      // Reset if not editing
+      setMainCategory('');
+      setSubCategory('');
+      setMainStore('');
+      setBranch('');
+      setItem('');
+      setPayment('');
+      setNote('');
+      setAmount(0);
+    }
+  }, [editData, isOpen]);
+
+  useEffect(() => { 
+    if (mainCategory && categories[mainCategory] && !categories[mainCategory].sub.includes(subCategory)) {
+       setSubCategory(''); 
+    }
+  }, [mainCategory]);
 
   if (!isOpen) return null;
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const themeColor = type === 'expense' ? 'var(--color-expense)' : 'var(--color-income)';
 
-  const handleConfirm = (amount) => {
-    addTransaction({ type, date, mainCategory, subCategory, mainStore, branch, item, amount, payment, note });
+  const handleConfirm = (finalAmount) => {
+    if (editData) {
+      deleteTransaction(editData.id); // Simple edit: delete and re-add
+    }
+    addTransaction({ type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
     onClose();
   };
 
@@ -87,7 +121,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
           </button>
         </div>
 
-        {/* Categories Grid */}
+        {/* Categories Grid - 3 Columns */}
         <div className="mb-8">
           <div className="text-muted font-bold mb-4 text-center text-lg">主分類</div>
           <div className="grid-cat">
@@ -115,7 +149,8 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
           </div>
         </div>
 
-        {mainCategory && (
+        {/* Fix for White Screen: Check if mainCategory exists in current type categories */}
+        {mainCategory && categories[mainCategory] && (
           <div className="mb-8 p-4 bg-surface rounded-2xl" style={{ animation: 'panelUp 0.3s ease-out' }}>
             <div className="text-muted font-bold mb-4 text-center text-lg">子分類</div>
             <div className="flex flex-wrap justify-center gap-3">
@@ -139,7 +174,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
           </div>
         )}
 
-        {/* Card Inputs */}
+        {/* Side by Side Inputs */}
         <div className="flex flex-col gap-6 mb-10">
           <div className="grid-2 gap-4">
             <div className="flex flex-col gap-2 cursor-pointer" onClick={() => openSheet('store')}>
@@ -169,12 +204,15 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
           </div>
 
           <div className="flex justify-center py-4">
-            <button 
-              className={`btn-3d w-20 h-20 rounded-full ${showKeypad ? (type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income') : 'bg-surface text-light'}`} 
-              onClick={() => setShowKeypad(!showKeypad)}
-            >
-              <Calculator size={40} />
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-muted font-bold">金額: ${amount}</span>
+              <button 
+                className={`btn-3d w-20 h-20 rounded-full ${showKeypad ? (type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income') : 'bg-surface text-light'}`} 
+                onClick={() => setShowKeypad(!showKeypad)}
+              >
+                <Calculator size={40} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -187,11 +225,24 @@ export default function ManualAddModal({ isOpen, onClose, initialDate }) {
           </div>
           <CalculatorKeypad 
             type={type} 
-            onConfirm={handleConfirm} 
+            initialValue={amount}
+            onConfirm={(val) => { setAmount(val); setShowKeypad(false); }} 
             onAppendNote={(s) => setNote(p => p+s)} 
             onClickUnit={() => openSheet('unit')} 
           />
         </div>
+      )}
+
+      {/* Final Action Button for Edit/Save */}
+      {amount > 0 && !showKeypad && (
+         <div className="p-6 bg-white border-t border-gray-100">
+            <button 
+              className={`w-full py-6 rounded-2xl font-bold text-2xl text-white ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
+              onClick={() => handleConfirm(amount)}
+            >
+              {editData ? '更新帳務' : '完成新增'}
+            </button>
+         </div>
       )}
 
       <BottomSheet 

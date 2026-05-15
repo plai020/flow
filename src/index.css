@@ -186,7 +186,7 @@ body {
 /* Grid Layouts */
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.grid-cat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+.grid-cat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
 
 /* Utilities */
 .flex { display: flex; }

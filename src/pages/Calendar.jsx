@@ -8,6 +8,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [expandedNodes, setExpandedNodes] = useState({});
   const { transactions, deleteTransaction, expenseCategories, incomeCategories } = useApp();
 
@@ -38,6 +39,16 @@ export default function Calendar() {
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
+
+  const handleEdit = (t) => {
+    setEditingTransaction(t);
+    setIsManualModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsManualModalOpen(false);
+    setEditingTransaction(null);
+  };
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
@@ -124,7 +135,7 @@ export default function Calendar() {
                           <div className="flex items-center gap-4">
                             <span className="font-bold text-xl">{t.amount}</span>
                             <div className="flex gap-2">
-                              <button className="text-light"><Edit2 size={20} /></button>
+                              <button onClick={() => handleEdit(t)} className="text-light"><Edit2 size={20} /></button>
                               <button onClick={() => deleteTransaction(t.id)} className="text-expense"><Trash2 size={20} /></button>
                             </div>
                           </div>
@@ -146,7 +157,12 @@ export default function Calendar() {
         <button className="btn-3d w-14 h-14 bg-white shadow-lg"><ScanText size={24} className="text-muted" /></button>
       </div>
 
-      <ManualAddModal isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} initialDate={selectedDateStr} />
+      <ManualAddModal 
+        isOpen={isManualModalOpen} 
+        onClose={handleCloseModal} 
+        initialDate={selectedDateStr} 
+        editData={editingTransaction}
+      />
     </div>
   );
 }
