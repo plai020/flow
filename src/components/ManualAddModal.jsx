@@ -18,6 +18,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   const [note, setNote] = useState('');
   const [amount, setAmount] = useState(0);
   const [sheetConfig, setSheetConfig] = useState({ isOpen: false, type: null });
+  const [inputTarget, setInputTarget] = useState('amount');
 
   const { 
     expenseCategories, incomeCategories, addCustomCategory, addSubCategory,
@@ -171,8 +172,8 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
           </div>
           <div className="flex justify-center py-4">
             <div className="flex flex-col items-center gap-2">
-              <span className="text-muted font-bold text-lg">金額: ${amount}</span>
-              <button className={`btn-3d w-20 h-20 rounded-full ${showKeypad ? (type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income') : 'bg-surface text-light'}`} onClick={() => setShowKeypad(!showKeypad)}><Calculator size={40} /></button>
+              <span style={{ fontSize: '36px', fontWeight: '900', color: 'var(--color-text-main)' }}>金額: ${amount.toLocaleString()}</span>
+              <button className={`btn-3d w-20 h-20 rounded-full ${showKeypad ? (type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income') : 'bg-surface text-light'}`} onClick={() => { setShowKeypad(!showKeypad); setInputTarget('amount'); }}><Calculator size={40} /></button>
             </div>
           </div>
         </div>
@@ -185,20 +186,28 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
             <button onClick={() => setShowKeypad(false)} className="text-muted"><X size={28} /></button>
           </div>
           {/* Note input inside calculator panel */}
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="text-muted font-bold text-sm block mb-1">備註 (可點擊 Unit / $ 快速輸入)</label>
             <input 
               value={note} 
               onChange={e => setNote(e.target.value)} 
-              className="w-full p-4 bg-surface rounded-xl border-none outline-none font-bold text-xl shadow-inner" 
+              onFocus={() => setInputTarget('note')}
+              className="w-full p-4 rounded-xl border-none outline-none font-bold text-xl shadow-inner transition-all"
+              style={{
+                border: inputTarget === 'note' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                backgroundColor: inputTarget === 'note' ? 'var(--color-primary-light)' : 'var(--color-surface)'
+              }}
               placeholder="輸入備註..."
             />
           </div>
           <CalculatorKeypad 
             type={type} 
             initialValue={amount}
+            note={note}
+            setNote={setNote}
+            inputTarget={inputTarget}
+            setInputTarget={setInputTarget}
             onConfirm={(val) => { setAmount(val); setShowKeypad(false); }} 
-            onAppendNote={(s) => setNote(p => p+s)} 
             onClickUnit={() => openSheet('unit')} 
           />
         </div>
