@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Delete, CornerDownLeft } from 'lucide-react';
 
-export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppendNote, onClickUnit }) {
-  const [expression, setExpression] = useState('0');
+export default function CalculatorKeypad({ type = 'expense', initialValue = 0, onConfirm, onAppendNote, onClickUnit }) {
+  const [expression, setExpression] = useState(initialValue > 0 ? String(initialValue) : '0');
 
   const safeCalculate = (expr) => {
     try {
-      const cleanExpr = expr.replace(/×/g, '*').replace(/÷/g, '/');
+      // Clean percentage operator to *0.01, standard division to /, and standard multiplication to *
+      const cleanExpr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/%/g, '*0.01');
       if (!/^[\d.+\-*/\s]+$/.test(cleanExpr)) return NaN;
       
       const tokens = cleanExpr.match(/\d+\.?\d*|[+\-*/]/g);
@@ -44,6 +45,7 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
 
   const handlePress = (val) => {
     if (expression === '0' && !['+', '-', '*', '/'].includes(val) && val !== '.') {
+      if (val === '00') return; // Do not append 00 to 0
       setExpression(val);
     } else {
       setExpression(prev => prev + val);
@@ -60,44 +62,53 @@ export default function CalculatorKeypad({ type = 'expense', onConfirm, onAppend
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Right-aligned display with thousands separator */}
-      <div className="flex justify-end items-center px-6 py-4 bg-white rounded-2xl shadow-inner mb-2 overflow-hidden">
-        <span className="text-5xl font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
+      {/* Right-aligned display with thousands separator - Massive Font */}
+      <div className="flex justify-end items-center px-6 py-4 bg-white rounded-2xl shadow-inner mb-2 overflow-hidden" style={{ minHeight: '110px' }}>
+        <span style={{ fontSize: '72px', fontWeight: '900', color: 'var(--color-text-main)', trackingTight: '-0.025em', lineHeight: '1.1' }}>
           {formatAmount(expression)}
         </span>
       </div>
 
-      {/* Consistent 5-column grid */}
+      {/* Consistent 5-column grid with Figure 4 layout */}
       <div className="grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+        {/* Row 1 */}
+        <button className="btn-3d text-primary" style={btnStyle} onClick={onClickUnit}>Unit</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => onAppendNote('/')}>/</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => onAppendNote('$')}>$</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('%')}>%</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('÷')}>÷</button>
+
+        {/* Row 2 */}
+        <button className="btn-3d text-expense" style={btnStyle} onClick={() => setExpression(prev => prev.length > 1 ? prev.slice(0, -1) : '0')}>&gt;</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('7')}>7</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('8')}>8</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('9')}>9</button>
-        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('/')}>÷</button>
-        <button className="btn-3d text-expense" style={btnStyle} onClick={() => setExpression('0')}>C</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('×')}>x</button>
 
+        {/* Row 3 */}
+        <button className="btn-3d text-expense" style={btnStyle} onClick={() => setExpression('0')}>C</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('4')}>4</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('5')}>5</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('6')}>6</button>
-        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('*')}>×</button>
-        <button className="btn-3d" style={btnStyle} onClick={() => setExpression(prev => prev.length > 1 ? prev.slice(0, -1) : '0')}>
-          <Delete size={28} />
-        </button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('-')}>-</button>
 
+        {/* Row 4 */}
+        <button className="btn-3d text-expense" style={btnStyle} onClick={() => setExpression('0')}>AC</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('1')}>1</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('2')}>2</button>
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('3')}>3</button>
-        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('-')}>-</button>
-        <button className="btn-3d text-primary" style={btnStyle} onClick={handleCalculate}>=</button>
+        {/* + spans two rows in the 5th column */}
+        <button className="btn-3d text-primary" style={{ ...btnStyle, gridRow: 'span 2', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => handlePress('+')}>+</button>
 
-        <button className="btn-3d" style={btnStyle} onClick={() => handlePress('.')}>.</button>
+        {/* Row 5 */}
         <button className="btn-3d" style={btnStyle} onClick={() => handlePress('0')}>0</button>
-        <button className="btn-3d text-primary" style={btnStyle} onClick={() => handlePress('/')}>/</button>
-        <button className="btn-3d" style={btnStyle} onClick={() => onAppendNote('$')}>$</button>
-        <button className="btn-3d" style={btnStyle} onClick={onClickUnit}>Unit</button>
+        <button className="btn-3d" style={btnStyle} onClick={() => handlePress('00')}>00</button>
+        <button className="btn-3d" style={btnStyle} onClick={() => handlePress('.')}>.</button>
+        <button className="btn-3d text-primary" style={btnStyle} onClick={handleCalculate}>=</button>
       </div>
 
       <button 
-        className={`w-full py-10 rounded-3xl font-bold text-5xl shadow-xl flex items-center justify-center gap-6 ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
+        className={`btn-large-confirm ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
         onClick={() => onConfirm(safeCalculate(expression))}
       >
         確認輸入 <CornerDownLeft size={48} />

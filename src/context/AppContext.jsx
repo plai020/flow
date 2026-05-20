@@ -117,7 +117,7 @@ export const AppProvider = ({ children }) => {
       if (!target) return prev;
       return {
         ...prev,
-        [mainCat]: { ...target, sub: [...target.sub, subName] }
+        [mainCat]: { ...target, sub: [...(target.sub || []), subName] }
       };
     });
   };

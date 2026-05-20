@@ -90,7 +90,7 @@ export default function Calendar() {
       </div>
 
       {/* Scrollable Details */}
-      <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-6 pt-4" style={{ paddingBottom: '100px' }}>
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
           <h3 className="font-bold text-xl">{format(selectedDate, 'MM/dd')} 帳務</h3>
           <span className={`font-bold text-xl ${selectedDay.income - selectedDay.expense >= 0 ? 'text-income' : 'text-expense'}`}>
@@ -151,7 +151,7 @@ export default function Calendar() {
       </div>
 
       {/* Sticky Bottom Actions */}
-      <div className="sticky-actions" style={{ padding: '0 40px 10px 40px' }}>
+      <div className="sticky-actions">
         <button className="btn-3d w-14 h-14 bg-white shadow-lg"><Search size={24} className="text-muted" /></button>
         <button onClick={() => setIsManualModalOpen(true)} className="btn-3d btn-3d-primary rounded-full shadow-lg" style={{ width: '64px', height: '64px' }}><Plus size={32} /></button>
         <button className="btn-3d w-14 h-14 bg-white shadow-lg"><ScanText size={24} className="text-muted" /></button>

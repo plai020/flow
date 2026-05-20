@@ -121,13 +121,13 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
                   <div className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all ${isActive ? 'shadow-inner' : 'btn-3d'}`} style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)', border: isActive ? 'none' : '1px solid #EEE' }}>
                     <Icon size={32} />
                   </div>
-                  <span className={`font-bold text-sm text-center ${isActive ? 'text-black' : 'text-muted'}`}>{name}</span>
+                  <span className={`text-cat-label ${isActive ? 'text-black' : 'text-muted'}`}>{name}</span>
                 </button>
               );
             })}
             <button className="flex flex-col items-center gap-2" onClick={() => openSheet('icon_picker')}>
               <div className="w-full aspect-square rounded-2xl flex items-center justify-center btn-3d bg-surface text-light"><Plus size={32} /></div>
-              <span className="font-bold text-sm text-center text-light">自訂</span>
+              <span className="text-cat-label text-light">自訂</span>
             </button>
           </div>
         </div>
@@ -205,9 +205,9 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       )}
 
       {amount > 0 && !showKeypad && (
-         <div className="p-6 bg-white border-t border-gray-100">
+         <div style={{ padding: '24px', backgroundColor: 'white', borderTop: '1px solid var(--color-border)' }}>
             <button 
-              className={`w-full py-10 rounded-3xl font-bold text-5xl text-white shadow-xl ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
+              className={`btn-large-add ${type === 'expense' ? 'btn-3d-expense' : 'btn-3d-income'}`}
               onClick={() => handleConfirm(amount)}
             >
               {editData ? '更新帳務' : '完成新增'}
