@@ -86,11 +86,39 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('flow_cloud_budget', JSON.stringify(cloudBudget)), [cloudBudget]);
   useEffect(() => localStorage.setItem('flow_cloud_items', JSON.stringify(cloudItems)), [cloudItems]);
 
+  // Robust date normalization to YYYY-MM-DD
+  const normalizeDate = (dateVal) => {
+    if (!dateVal) return '';
+    const dateStr = String(dateVal).trim();
+    
+    // 1. Try regex extraction first to avoid timezone shift issues (e.g. "2026-05-21" or "2026/05/21")
+    const match = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (match) {
+      const yyyy = match[1];
+      const mm = match[2].padStart(2, '0');
+      const dd = match[3].padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    
+    // 2. Fallback to Date object parsing
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    } catch (e) {}
+    
+    return dateStr;
+  };
+
   // Helpers for mapping cloud database to local state
   const mapCloudToLocalTx = (cloudTx) => {
     return {
       id: String(cloudTx.id || cloudTx.ID || ''),
-      date: cloudTx.date || cloudTx['日期'] || '',
+      date: normalizeDate(cloudTx.date || cloudTx['日期'] || ''),
       type: (cloudTx.type === 'expense' || cloudTx['類型'] === '支出') ? 'expense' : 'income',
       mainCategory: cloudTx.mainCategory || cloudTx['主分類'] || '',
       subCategory: cloudTx.subCategory || cloudTx['子分類'] || '',
@@ -160,9 +188,13 @@ export const AppProvider = ({ children }) => {
     try {
       const data = await fetchCloudData(targetUrl);
       
-      // 1. Map Transactions
+      // 1. Map & Merge Transactions safely to prevent overwriting in-flight additions
       const mappedTxs = (data.transactions || []).map(mapCloudToLocalTx);
-      setTransactions(mappedTxs);
+      setTransactions(prev => {
+        const cloudIds = new Set(mappedTxs.map(t => t.id));
+        const localOnly = prev.filter(t => t.id && !cloudIds.has(t.id) && !t.__optimistic);
+        return [...mappedTxs, ...localOnly];
+      });
       
       // 2. Map Categories
       if (data.categories && data.categories.length > 0) {
@@ -275,7 +307,11 @@ export const AppProvider = ({ children }) => {
       fetchCloudData(savedUrl)
         .then(data => {
           const mappedTxs = (data.transactions || []).map(mapCloudToLocalTx);
-          setTransactions(mappedTxs);
+          setTransactions(prev => {
+            const cloudIds = new Set(mappedTxs.map(t => t.id));
+            const localOnly = prev.filter(t => t.id && !cloudIds.has(t.id));
+            return [...mappedTxs, ...localOnly];
+          });
           
           if (data.categories && data.categories.length > 0) {
             const parsedExpenses = {};
@@ -347,15 +383,9 @@ export const AppProvider = ({ children }) => {
   const addTransaction = (t) => {
     const newId = t.id || `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newTx = { ...t, id: newId };
-    
-    setTransactions(prev => {
-      const exists = prev.some(item => item.id === newId);
-      if (exists) {
-        return prev.map(item => item.id === newId ? newTx : item);
-      }
-      return [newTx, ...prev];
-    });
-    
+    // optimistic flag before cloud sync
+    setTransactions(prev => [{ ...newTx, __optimistic: true }, ...prev]);
+
     // Manage Recent Stores
     if (t.mainStore && !favoriteStores.includes(t.mainStore)) {
       setRecentStores(prev => {
@@ -364,12 +394,18 @@ export const AppProvider = ({ children }) => {
       });
     }
 
-    // Cloud Sync Mutation (POST)
     if (sheetsUrl) {
       const action = t.id ? 'update' : 'create';
-      postCloudTransaction(sheetsUrl, action, mapLocalToCloudTx(newTx)).catch(err => {
-        console.error(`雲端同步 (${action}) 失敗:`, err);
-      });
+      postCloudTransaction(sheetsUrl, action, mapLocalToCloudTx(newTx))
+        .then(() => {
+          // clear flag on success
+          setTransactions(prev => prev.map(tx => tx.id === newId ? { ...tx, __optimistic: false } : tx));
+        })
+        .catch(err => {
+          console.error(`雲端同步 (${action}) 失敗:`, err);
+          // keep transaction locally, just clear flag
+          setTransactions(prev => prev.map(tx => tx.id === newId ? { ...tx, __optimistic: false } : tx));
+        });
     }
   };
 

@@ -19,6 +19,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   const [amount, setAmount] = useState(0);
   const [sheetConfig, setSheetConfig] = useState({ isOpen: false, type: null });
   const [inputTarget, setInputTarget] = useState('amount');
+  const [pendingIconCategory, setPendingIconCategory] = useState(null);
 
   const { 
     expenseCategories, incomeCategories, addCustomCategory, addSubCategory,
@@ -26,7 +27,8 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
-    addTransaction, deleteTransaction, updateTransaction
+    addTransaction, deleteTransaction, updateTransaction,
+    updateCategoryIcon
   } = useApp();
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
@@ -86,6 +88,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       case 'payment': return { title: '支付方式', options: payments, type: 'payment', onSelect: setPayment, onAddNew: (val) => { setPayments(p => [...p, val]); setPayment(val); } };
       case 'unit': return { title: '單位', options: commonUnits, type: 'unit', onSelect: (v) => setNote(p => p+v), onAddNew: (v) => { setCommonUnits(p => [...p, v]); setNote(p => p+v); } };
       case 'icon_picker': return { title: '選擇圖示', options: Object.keys(CATEGORY_ICONS).filter(k => k !== 'default'), type: 'icon', onSelect: (icon) => { const name = prompt('輸入新分類名稱'); if(name) addCustomCategory(type, name, icon); }, allowAdd: false };
+      case 'icon_picker_existing': return { title: `選擇 "${pendingIconCategory}" 的圖示`, options: Object.keys(CATEGORY_ICONS).filter(k => k !== 'default' && k !== 'HelpCircle'), type: 'icon', onSelect: (icon) => { if (pendingIconCategory) updateCategoryIcon(pendingIconCategory, icon); closeSheet(); }, allowAdd: false };
       case 'sub_add': return { title: `新增 ${mainCategory} 子分類`, options: [], type: 'sub', onSelect: () => {}, onAddNew: (val) => { addSubCategory(type, mainCategory, val); setSubCategory(val); closeSheet(); } };
       default: return { title: '', options: [] };
     }
@@ -120,12 +123,28 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
             {Object.entries(categories).map(([name, data]) => {
               const Icon = CATEGORY_ICONS[data.icon] || CATEGORY_ICONS['default'];
               const isActive = mainCategory === name;
+              const isQuestion = data.icon === 'HelpCircle';
               return (
-                <button key={name} className="flex flex-col items-center gap-2" onClick={() => setMainCategory(name)}>
+                <button 
+                  key={name} 
+                  className="flex flex-col items-center gap-2 relative" 
+                  onClick={() => {
+                    setMainCategory(name);
+                    if (isQuestion) {
+                      setPendingIconCategory(name);
+                      openSheet('icon_picker_existing');
+                    }
+                  }}
+                >
                   <div className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all ${isActive ? 'shadow-inner' : 'btn-3d'}`} style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)', border: isActive ? 'none' : '1px solid #EEE' }}>
                     <Icon size={32} />
                   </div>
                   <span className={`text-cat-label ${isActive ? 'text-black' : 'text-muted'}`}>{name}</span>
+                  {isQuestion && (
+                    <div className="absolute -top-1 -right-1 bg-expense text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 animate-pulse shadow-sm z-10" style={{ pointerEvents: 'none' }}>
+                      🏷️
+                    </div>
+                  )}
                 </button>
               );
             })}
