@@ -9,15 +9,15 @@ import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Home() {
-  // Render Budget page when mode is 'budget'
-  if (mode === 'budget') {
-    return <Budget />;
-  }
+
   const [periodType, setPeriodType] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [type, setType] = useState('expense');
   const [mode, setMode] = useState('actual');
   const [expandedNodes, setExpandedNodes] = useState({});
+  if (mode === 'budget') {
+    return <Budget />;
+  }
   const { transactions, expenseCategories, incomeCategories } = useApp();
 
   const toggleNode = (cat) => {
