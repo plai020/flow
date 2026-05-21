@@ -3,11 +3,16 @@ import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIco
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { format, subMonths, addMonths, startOfMonth, endOfMonth, startOfYear, subQuarters, addQuarters, startOfQuarter, endOfQuarter } from 'date-fns';
+import Budget from './Budget';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Home() {
+  // Render Budget page when mode is 'budget'
+  if (mode === 'budget') {
+    return <Budget />;
+  }
   const [periodType, setPeriodType] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [type, setType] = useState('expense');
@@ -45,8 +50,11 @@ export default function Home() {
   };
 
   const { s, e } = getRange();
+  // Convert range to YYYY-MM-DD strings for lexical comparison (avoid timezone shift)
+  const startStr = format(s, 'yyyy-MM-dd');
+  const endStr = format(e, 'yyyy-MM-dd');
   const filtered = useMemo(() => {
-    const list = transactions.filter(t => t.type === type && new Date(t.date) >= s && new Date(t.date) <= e);
+    const list = transactions.filter(t => t.type === type && t.date >= startStr && t.date <= endStr);
     const groups = {};
     let total = 0;
     list.forEach(t => {
@@ -57,7 +65,7 @@ export default function Home() {
       groups[t.mainCategory].sub[sub] = (groups[t.mainCategory].sub[sub] || 0) + t.amount;
     });
     return { groups, total };
-  }, [transactions, type, s, e]);
+  }, [transactions, type, startStr, endStr]);
 
   const chartData = {
     labels: Object.keys(filtered.groups),

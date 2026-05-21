@@ -115,21 +115,26 @@ export const AppProvider = ({ children }) => {
   };
 
   // Helpers for mapping cloud database to local state
-  const mapCloudToLocalTx = (cloudTx) => {
-    return {
-      id: String(cloudTx.id || cloudTx.ID || ''),
-      date: normalizeDate(cloudTx.date || cloudTx['日期'] || ''),
-      type: (cloudTx.type === 'expense' || cloudTx['類型'] === '支出') ? 'expense' : 'income',
-      mainCategory: cloudTx.mainCategory || cloudTx['主分類'] || '',
-      subCategory: cloudTx.subCategory || cloudTx['子分類'] || '',
-      amount: Number(cloudTx.amount || cloudTx['金額'] || 0),
-      mainStore: cloudTx.mainStore || cloudTx['商店'] || '',
-      branch: cloudTx.branch || cloudTx['分店'] || '',
-      item: cloudTx.item || cloudTx['物品'] || '',
-      payment: cloudTx.payment || cloudTx['支付方式'] || '',
-      note: cloudTx.note || cloudTx['備註'] || ''
+    const mapCloudToLocalTx = (cloudTx) => {
+      return {
+        id: String(cloudTx.id || cloudTx.ID || ''),
+        date: normalizeDate(cloudTx.date || cloudTx['日期'] || ''),
+        // Prioritize Chinese type if present, fallback to English
+        type: cloudTx['類型'] === '支出' || cloudTx.type === 'expense'
+          ? 'expense'
+          : cloudTx['類型'] === '收入' || cloudTx.type === 'income'
+          ? 'income'
+          : 'expense',
+        mainCategory: cloudTx.mainCategory || cloudTx['主分類'] || '',
+        subCategory: cloudTx.subCategory || cloudTx['子分類'] || '',
+        amount: Number(cloudTx.amount || cloudTx['金額'] || 0),
+        mainStore: cloudTx.mainStore || cloudTx['商店'] || '',
+        branch: cloudTx.branch || cloudTx['分店'] || '',
+        item: cloudTx.item || cloudTx['物品'] || '',
+        payment: cloudTx.payment || cloudTx['支付方式'] || '',
+        note: cloudTx.note || cloudTx['備註'] || ''
+      };
     };
-  };
 
   const mapLocalToCloudTx = (localTx) => {
     return {
@@ -238,10 +243,10 @@ export const AppProvider = ({ children }) => {
         });
 
         if (Object.keys(parsedExpenses).length > 0) {
-          setExpenseCategories(parsedExpenses);
+          setExpenseCategories(prev => ({ ...prev, ...parsedExpenses }));
         }
         if (Object.keys(parsedIncomes).length > 0) {
-          setIncomeCategories(parsedIncomes);
+          setIncomeCategories(prev => ({ ...prev, ...parsedIncomes }));
         }
       }
       

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calculator, Plus, CheckCircle2, Star } from 'lucide-react';
+import { X, Calculator, Plus, CheckCircle2, Star, Edit } from 'lucide-react';
 import CalculatorKeypad from './CalculatorKeypad';
 import BottomSheet from './BottomSheet';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
@@ -130,14 +130,15 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
                   className="flex flex-col items-center gap-2 relative" 
                   onClick={() => {
                     setMainCategory(name);
-                    if (isQuestion) {
-                      setPendingIconCategory(name);
-                      openSheet('icon_picker_existing');
-                    }
+                    // Open icon picker for any category via edit button, not on main click
                   }}
                 >
-                  <div className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all ${isActive ? 'shadow-inner' : 'btn-3d'}`} style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)', border: isActive ? 'none' : '1px solid #EEE' }}>
+                  <div className="relative w-full aspect-square rounded-2xl flex items-center justify-center transition-all" style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)', border: isActive ? 'none' : '1px solid #EEE' }}>
                     <Icon size={32} />
+                    {/* Edit icon overlay */}
+                    <button type="button" className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); setPendingIconCategory(name); openSheet('icon_picker_existing'); }}>
+                      <Edit size={16} className="text-white bg-black rounded-full" />
+                    </button>
                   </div>
                   <span className={`text-cat-label ${isActive ? 'text-black' : 'text-muted'}`}>{name}</span>
                   {isQuestion && (
