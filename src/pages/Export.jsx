@@ -5,6 +5,7 @@ import {
   Compass, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { getSheetsUrl, saveSheetsUrl, fetchCloudData } from '../services/googleSheets';
+import { useApp } from '../context/AppContext';
 
 export default function Export() {
   const [url, setUrl] = useState('');
@@ -12,6 +13,8 @@ export default function Export() {
   const [status, setStatus] = useState('idle'); // 'idle', 'testing', 'success', 'error'
   const [errorMsg, setErrorMsg] = useState('');
   const [stats, setStats] = useState(null);
+
+  const { syncWithCloud, disconnectCloud } = useApp();
 
   useEffect(() => {
     // 載入已儲存的 URL
@@ -33,10 +36,7 @@ export default function Export() {
     setErrorMsg('');
 
     try {
-      const data = await fetchCloudData(testUrl.trim());
-      
-      // 成功連線，儲存網址
-      saveSheetsUrl(testUrl.trim());
+      const data = await syncWithCloud(testUrl.trim());
       
       // 統計數據
       setStats({
@@ -60,7 +60,7 @@ export default function Export() {
 
   const handleDisconnect = () => {
     if (window.confirm('確定要中斷與 Google Sheets 的雲端連線嗎？這將會把系統還原為單機離線運作狀態。')) {
-      saveSheetsUrl('');
+      disconnectCloud();
       setUrl('');
       setStats(null);
       setStatus('idle');

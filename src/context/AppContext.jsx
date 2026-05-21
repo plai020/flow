@@ -3,6 +3,7 @@ import {
   Utensils, Bus, ShoppingBag, Home, Film, DollarSign, TrendingUp, HelpCircle, 
   Smartphone, Coffee, Car, Plane, Heart, Star, Pizza, Gift
 } from 'lucide-react';
+import { getSheetsUrl, saveSheetsUrl, fetchCloudData, postCloudTransaction } from '../services/googleSheets';
 
 export const CATEGORY_ICONS = {
   'Utensils': Utensils,
@@ -63,6 +64,14 @@ export const AppProvider = ({ children }) => {
   const [payments, setPayments] = useState(() => loadInitialData('flow_payments', ['現金', '信用卡', 'Line Pay', 'Apple Pay']));
   const [commonUnits, setCommonUnits] = useState(() => loadInitialData('flow_common_units', ['個', '瓶', '杯', '箱', '顆', '斤']));
 
+  // Cloud Sync State
+  const [sheetsUrl, setSheetsUrl] = useState(() => getSheetsUrl());
+  const [cloudBudget, setCloudBudget] = useState(() => loadInitialData('flow_cloud_budget', []));
+  const [cloudItems, setCloudItems] = useState(() => loadInitialData('flow_cloud_items', []));
+  const [cloudActive, setCloudActive] = useState(false);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [customCatIcons, setCustomCatIcons] = useState(() => loadInitialData('flow_cat_icons', {}));
+
   // Persistence
   useEffect(() => localStorage.setItem('flow_transactions', JSON.stringify(transactions)), [transactions]);
   useEffect(() => localStorage.setItem('flow_budgets', JSON.stringify(budgets)), [budgets]);
@@ -73,10 +82,279 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('flow_store_branches', JSON.stringify(storeBranches)), [storeBranches]);
   useEffect(() => localStorage.setItem('flow_payments', JSON.stringify(payments)), [payments]);
   useEffect(() => localStorage.setItem('flow_common_units', JSON.stringify(commonUnits)), [commonUnits]);
+  useEffect(() => localStorage.setItem('flow_cat_icons', JSON.stringify(customCatIcons)), [customCatIcons]);
+  useEffect(() => localStorage.setItem('flow_cloud_budget', JSON.stringify(cloudBudget)), [cloudBudget]);
+  useEffect(() => localStorage.setItem('flow_cloud_items', JSON.stringify(cloudItems)), [cloudItems]);
+
+  // Helpers for mapping cloud database to local state
+  const mapCloudToLocalTx = (cloudTx) => {
+    return {
+      id: String(cloudTx.id || cloudTx.ID || ''),
+      date: cloudTx.date || cloudTx['日期'] || '',
+      type: (cloudTx.type === 'expense' || cloudTx['類型'] === '支出') ? 'expense' : 'income',
+      mainCategory: cloudTx.mainCategory || cloudTx['主分類'] || '',
+      subCategory: cloudTx.subCategory || cloudTx['子分類'] || '',
+      amount: Number(cloudTx.amount || cloudTx['金額'] || 0),
+      mainStore: cloudTx.mainStore || cloudTx['商店'] || '',
+      branch: cloudTx.branch || cloudTx['分店'] || '',
+      item: cloudTx.item || cloudTx['物品'] || '',
+      payment: cloudTx.payment || cloudTx['支付方式'] || '',
+      note: cloudTx.note || cloudTx['備註'] || ''
+    };
+  };
+
+  const mapLocalToCloudTx = (localTx) => {
+    return {
+      // Send both English and Chinese keys for bulletproof API mapping
+      id: localTx.id,
+      date: localTx.date,
+      type: localTx.type,
+      mainCategory: localTx.mainCategory,
+      subCategory: localTx.subCategory,
+      amount: Number(localTx.amount),
+      mainStore: localTx.mainStore,
+      branch: localTx.branch,
+      item: localTx.item,
+      payment: localTx.payment,
+      note: localTx.note,
+      
+      'ID': localTx.id,
+      '日期': localTx.date,
+      '類型': localTx.type === 'expense' ? '支出' : '收入',
+      '主分類': localTx.mainCategory,
+      '子分類': localTx.subCategory,
+      '金額': Number(localTx.amount),
+      '商店': localTx.mainStore,
+      '分店': localTx.branch,
+      '物品': localTx.item,
+      '支付方式': localTx.payment,
+      '備註': localTx.note
+    };
+  };
+
+  const mapCloudBudget = (row) => {
+    return {
+      mainCategory: row['主分類'] || row.mainCategory || '',
+      subCategory: row['子分類'] || row.subCategory || '',
+      ...row
+    };
+  };
+
+  const mapCloudItem = (row) => {
+    return {
+      type: (row['類型'] === '支出' || row.type === 'expense') ? 'expense' : 'income',
+      mainCategory: row['主分類'] || row.mainCategory || '',
+      subCategory: row['子分類'] || row.subCategory || '',
+      mainStore: row['商店'] || row.mainStore || '',
+      branch: row['分店'] || row.branch || '',
+      item: row['物品'] || row.item || '',
+      payment: row['支付方式'] || row.payment || ''
+    };
+  };
+
+  // Sync Logic (trigger from settings page manually, or on boot)
+  const syncWithCloud = async (url) => {
+    const targetUrl = url || sheetsUrl;
+    if (!targetUrl) return;
+    setCloudLoading(true);
+    try {
+      const data = await fetchCloudData(targetUrl);
+      
+      // 1. Map Transactions
+      const mappedTxs = (data.transactions || []).map(mapCloudToLocalTx);
+      setTransactions(mappedTxs);
+      
+      // 2. Map Categories
+      if (data.categories && data.categories.length > 0) {
+        const parsedExpenses = {};
+        const parsedIncomes = {};
+        const savedIcons = JSON.parse(localStorage.getItem('flow_cat_icons') || '{}');
+
+        data.categories.forEach(row => {
+          const type = (row['類型'] === '支出' || row['type'] === 'expense' || row['類型'] === 'expense') ? 'expense' : 'income';
+          const main = row['主分類'] || row['mainCategory'];
+          const sub = row['子分類'] || row['subCategory'];
+          
+          if (!main) return;
+          
+          const targetDict = type === 'expense' ? parsedExpenses : parsedIncomes;
+          
+          if (!targetDict[main]) {
+            let icon = 'HelpCircle';
+            
+            // Keep original icons if they already existed
+            if (type === 'expense' && expenseCategories[main]) {
+              icon = expenseCategories[main].icon;
+            } else if (type === 'income' && incomeCategories[main]) {
+              icon = incomeCategories[main].icon;
+            }
+            
+            // Override with user custom icon
+            if (savedIcons[main]) {
+              icon = savedIcons[main];
+            }
+            
+            targetDict[main] = {
+              icon: icon,
+              sub: []
+            };
+          }
+          
+          if (sub && !targetDict[main].sub.includes(sub)) {
+            targetDict[main].sub.push(sub);
+          }
+        });
+
+        if (Object.keys(parsedExpenses).length > 0) {
+          setExpenseCategories(parsedExpenses);
+        }
+        if (Object.keys(parsedIncomes).length > 0) {
+          setIncomeCategories(parsedIncomes);
+        }
+      }
+      
+      // 3. Map Budgets & Items
+      const mappedBudgets = (data.budget2026 || []).map(mapCloudBudget);
+      setCloudBudget(mappedBudgets);
+      
+      const mappedItems = (data.items || []).map(mapCloudItem);
+      setCloudItems(mappedItems);
+      
+      setSheetsUrl(targetUrl);
+      saveSheetsUrl(targetUrl);
+      setCloudActive(true);
+      setCloudLoading(false);
+      return data;
+    } catch (err) {
+      setCloudLoading(false);
+      setCloudActive(false);
+      throw err;
+    }
+  };
+
+  const disconnectCloud = () => {
+    saveSheetsUrl('');
+    setSheetsUrl('');
+    setCloudActive(false);
+    setCloudBudget([]);
+    setCloudItems([]);
+  };
+
+  const updateCategoryIcon = (mainCategory, iconName) => {
+    setCustomCatIcons(prev => ({
+      ...prev,
+      [mainCategory]: iconName
+    }));
+    
+    setExpenseCategories(prev => {
+      if (prev[mainCategory]) {
+        return {
+          ...prev,
+          [mainCategory]: { ...prev[mainCategory], icon: iconName }
+        };
+      }
+      return prev;
+    });
+    
+    setIncomeCategories(prev => {
+      if (prev[mainCategory]) {
+        return {
+          ...prev,
+          [mainCategory]: { ...prev[mainCategory], icon: iconName }
+        };
+      }
+      return prev;
+    });
+  };
+
+  // Boot Sync Effect
+  useEffect(() => {
+    const savedUrl = getSheetsUrl();
+    if (savedUrl) {
+      setCloudLoading(true);
+      fetchCloudData(savedUrl)
+        .then(data => {
+          const mappedTxs = (data.transactions || []).map(mapCloudToLocalTx);
+          setTransactions(mappedTxs);
+          
+          if (data.categories && data.categories.length > 0) {
+            const parsedExpenses = {};
+            const parsedIncomes = {};
+            const savedIcons = JSON.parse(localStorage.getItem('flow_cat_icons') || '{}');
+
+            data.categories.forEach(row => {
+              const type = (row['類型'] === '支出' || row['type'] === 'expense' || row['類型'] === 'expense') ? 'expense' : 'income';
+              const main = row['主分類'] || row['mainCategory'];
+              const sub = row['子分類'] || row['subCategory'];
+              
+              if (!main) return;
+              
+              const targetDict = type === 'expense' ? parsedExpenses : parsedIncomes;
+              
+              if (!targetDict[main]) {
+                let icon = 'HelpCircle';
+                
+                const localExpenseCats = JSON.parse(localStorage.getItem('flow_expense_cats') || '{}');
+                const localIncomeCats = JSON.parse(localStorage.getItem('flow_income_cats') || '{}');
+                
+                if (type === 'expense' && localExpenseCats[main]) {
+                  icon = localExpenseCats[main].icon;
+                } else if (type === 'income' && localIncomeCats[main]) {
+                  icon = localIncomeCats[main].icon;
+                }
+                
+                if (savedIcons[main]) {
+                  icon = savedIcons[main];
+                }
+                
+                targetDict[main] = {
+                  icon: icon,
+                  sub: []
+                };
+              }
+              
+              if (sub && !targetDict[main].sub.includes(sub)) {
+                targetDict[main].sub.push(sub);
+              }
+            });
+
+            if (Object.keys(parsedExpenses).length > 0) {
+              setExpenseCategories(parsedExpenses);
+            }
+            if (Object.keys(parsedIncomes).length > 0) {
+              setIncomeCategories(parsedIncomes);
+            }
+          }
+          
+          const mappedBudgets = (data.budget2026 || []).map(mapCloudBudget);
+          setCloudBudget(mappedBudgets);
+          
+          const mappedItems = (data.items || []).map(mapCloudItem);
+          setCloudItems(mappedItems);
+          
+          setCloudActive(true);
+          setCloudLoading(false);
+        })
+        .catch(err => {
+          console.error("啟動同步失敗:", err);
+          setCloudLoading(false);
+          setCloudActive(false);
+        });
+    }
+  }, []);
 
   // Actions
   const addTransaction = (t) => {
-    setTransactions(prev => [{ ...t, id: Date.now().toString() }, ...prev]);
+    const newId = t.id || `TX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newTx = { ...t, id: newId };
+    
+    setTransactions(prev => {
+      const exists = prev.some(item => item.id === newId);
+      if (exists) {
+        return prev.map(item => item.id === newId ? newTx : item);
+      }
+      return [newTx, ...prev];
+    });
     
     // Manage Recent Stores
     if (t.mainStore && !favoriteStores.includes(t.mainStore)) {
@@ -85,10 +363,34 @@ export const AppProvider = ({ children }) => {
         return [t.mainStore, ...filtered].slice(0, 10);
       });
     }
+
+    // Cloud Sync Mutation (POST)
+    if (sheetsUrl) {
+      const action = t.id ? 'update' : 'create';
+      postCloudTransaction(sheetsUrl, action, mapLocalToCloudTx(newTx)).catch(err => {
+        console.error(`雲端同步 (${action}) 失敗:`, err);
+      });
+    }
+  };
+
+  const updateTransaction = (t) => {
+    setTransactions(prev => prev.map(item => item.id === t.id ? t : item));
+    
+    if (sheetsUrl) {
+      postCloudTransaction(sheetsUrl, 'update', mapLocalToCloudTx(t)).catch(err => {
+        console.error("雲端同步 (update) 失敗:", err);
+      });
+    }
   };
 
   const deleteTransaction = (id) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
+    
+    if (sheetsUrl) {
+      postCloudTransaction(sheetsUrl, 'delete', { ID: id, id: id }).catch(err => {
+        console.error("雲端同步 (delete) 失敗:", err);
+      });
+    }
   };
 
   const toggleFavoriteStore = (storeName) => {
@@ -123,7 +425,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const value = {
-    transactions, addTransaction, deleteTransaction,
+    transactions, addTransaction, updateTransaction, deleteTransaction,
     budgets, setBudgets,
     expenseCategories, setExpenseCategories,
     incomeCategories, setIncomeCategories,
@@ -132,7 +434,9 @@ export const AppProvider = ({ children }) => {
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
-    addCustomCategory, addSubCategory
+    addCustomCategory, addSubCategory,
+    sheetsUrl, cloudBudget, cloudItems, cloudActive, cloudLoading,
+    syncWithCloud, disconnectCloud, updateCategoryIcon, customCatIcons
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

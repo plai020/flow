@@ -26,7 +26,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
-    addTransaction, deleteTransaction
+    addTransaction, deleteTransaction, updateTransaction
   } = useApp();
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
@@ -68,8 +68,11 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   if (!isOpen) return null;
 
   const handleConfirm = (finalAmount) => {
-    if (editData) deleteTransaction(editData.id);
-    addTransaction({ type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
+    if (editData) {
+      updateTransaction({ id: editData.id, type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
+    } else {
+      addTransaction({ type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
+    }
     onClose();
   };
 
