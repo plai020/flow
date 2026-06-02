@@ -15,9 +15,7 @@ export default function Home() {
   const [type, setType] = useState('expense');
   const [mode, setMode] = useState('actual');
   const [expandedNodes, setExpandedNodes] = useState({});
-  if (mode === 'budget') {
-    return <Budget />;
-  }
+
   const { transactions, expenseCategories, incomeCategories } = useApp();
 
   const toggleNode = (cat) => {
@@ -115,53 +113,59 @@ export default function Home() {
       </div>
 
       <div className="flex-1 overflow-y-auto pt-4 pb-24">
-        {/* Chart Area */}
-        <div className="flex justify-center mb-6">
-          <div className="w-72 h-72 p-6 bg-white rounded-full shadow-lg border border-gray-50 flex items-center justify-center">
-            {filtered.total > 0 ? <Pie data={chartData} options={{ plugins: { legend: { display: false } } }} /> : <span className="text-light font-bold">無資料</span>}
-          </div>
-        </div>
-
-        <div className="mx-6 p-4 card-unit text-center mb-6 bg-surface">
-          <div className="text-muted font-bold text-sm mb-1">總計 ({mode === 'actual' ? '實際' : '預算'})</div>
-          <div className="text-4xl font-bold" style={{ color: `var(--color-${type})` }}>${filtered.total.toLocaleString()}</div>
-        </div>
-
-        <div className="px-6 flex flex-col gap-4">
-          {Object.entries(filtered.groups).map(([cat, data]) => {
-            const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
-            const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
-            const nodeKey = `${type}-${cat}`;
-            const exp = !!expandedNodes[nodeKey];
-            
-            return (
-              <div key={cat} className="card-unit overflow-hidden">
-                <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => toggleNode(cat)}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-surface">
-                      <Icon size={24} className={activeColorClass} />
-                    </div>
-                    <span className="font-bold text-xl">{cat}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-xl">${data.amount.toLocaleString()}</span>
-                    {exp ? <ChevronDown size={24} className="text-light" /> : <ChevronRightIcon size={24} className="text-light" />}
-                  </div>
-                </div>
-                {exp && (
-                  <div className="bg-surface/30 border-t border-gray-50">
-                    {Object.entries(data.sub).map(([sub, amt]) => (
-                      <div key={sub} className="flex justify-between p-3 pl-16 text-lg border-b border-gray-50 last:border-0">
-                        <span className="font-bold text-muted">{sub}</span>
-                        <span className="font-bold">${amt.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        {mode === 'budget' ? (
+          <Budget />
+        ) : (
+          <>
+            {/* Chart Area */}
+            <div className="flex justify-center mb-6">
+              <div className="w-72 h-72 p-6 bg-white rounded-full shadow-lg border border-gray-50 flex items-center justify-center">
+                {filtered.total > 0 ? <Pie data={chartData} options={{ plugins: { legend: { display: false } } }} /> : <span className="text-light font-bold">無資料</span>}
               </div>
-            );
-          })}
-        </div>
+            </div>
+
+            <div className="mx-6 p-4 card-unit text-center mb-6 bg-surface">
+              <div className="text-muted font-bold text-sm mb-1">總計 ({mode === 'actual' ? '實際' : '預算'})</div>
+              <div className="text-4xl font-bold" style={{ color: `var(--color-${type})` }}>${filtered.total.toLocaleString()}</div>
+            </div>
+
+            <div className="px-6 flex flex-col gap-4">
+              {Object.entries(filtered.groups).map(([cat, data]) => {
+                const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
+                const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
+                const nodeKey = `${type}-${cat}`;
+                const exp = !!expandedNodes[nodeKey];
+                
+                return (
+                  <div key={cat} className="card-unit overflow-hidden">
+                    <div className="flex items-center justify-between p-2 cursor-pointer" onClick={() => toggleNode(cat)}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-surface">
+                          <Icon size={24} className={activeColorClass} />
+                        </div>
+                        <span className="font-bold text-xl">{cat}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-xl">${data.amount.toLocaleString()}</span>
+                        {exp ? <ChevronDown size={24} className="text-light" /> : <ChevronRightIcon size={24} className="text-light" />}
+                      </div>
+                    </div>
+                    {exp && (
+                      <div className="bg-surface/30 border-t border-gray-50">
+                        {Object.entries(data.sub).map(([sub, amt]) => (
+                          <div key={sub} className="flex justify-between p-3 pl-16 text-lg border-b border-gray-50 last:border-0">
+                            <span className="font-bold text-muted">{sub}</span>
+                            <span className="font-bold">${amt.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

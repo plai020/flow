@@ -27,9 +27,23 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
+    commonItems, setCommonItems,
     addTransaction, deleteTransaction, updateTransaction,
-    updateCategoryIcon
+    updateCategoryIcon,
+    deletePayment, deleteBranch, deleteCommonItem
   } = useApp();
+
+  const handleDeleteOption = (optVal) => {
+    if (window.confirm(`確定要刪除「${optVal}」嗎？`)) {
+      if (sheetConfig.type === 'payment') {
+        deletePayment(optVal);
+      } else if (sheetConfig.type === 'branch') {
+        deleteBranch(mainStore, optVal);
+      } else if (sheetConfig.type === 'item') {
+        deleteCommonItem(optVal);
+      }
+    }
+  };
 
   const categories = type === 'expense' ? expenseCategories : incomeCategories;
   const themeColor = type === 'expense' ? 'var(--color-expense)' : 'var(--color-income)';
@@ -86,6 +100,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
       case 'store': return { title: '選擇商店', options: { favorites: favoriteStores, recents: recentStores }, type: 'store', onSelect: setMainStore, onAddNew: (val) => { toggleFavoriteStore(val); setMainStore(val); } };
       case 'branch': return { title: `選擇分店 (${mainStore})`, options: storeBranches[mainStore] || [], type: 'branch', onSelect: setBranch, onAddNew: (val) => { setStoreBranches(prev => ({...prev, [mainStore]: [...(prev[mainStore]||[]), val]})); setBranch(val); } };
       case 'payment': return { title: '支付方式', options: payments, type: 'payment', onSelect: setPayment, onAddNew: (val) => { setPayments(p => [...p, val]); setPayment(val); } };
+      case 'item': return { title: '選擇物品', options: commonItems, type: 'item', onSelect: setItem, onAddNew: (val) => { setCommonItems(p => [...p, val]); setItem(val); } };
       case 'unit': return { title: '單位', options: commonUnits, type: 'unit', onSelect: (v) => setNote(p => p+v), onAddNew: (v) => { setCommonUnits(p => [...p, v]); setNote(p => p+v); } };
       case 'icon_picker': return { title: '選擇圖示', options: Object.keys(CATEGORY_ICONS).filter(k => k !== 'default'), type: 'icon', onSelect: (icon) => { const name = prompt('輸入新分類名稱'); if(name) addCustomCategory(type, name, icon); }, allowAdd: false };
       case 'icon_picker_existing': return { title: `選擇 "${pendingIconCategory}" 的圖示`, options: Object.keys(CATEGORY_ICONS).filter(k => k !== 'default' && k !== 'HelpCircle'), type: 'icon', onSelect: (icon) => { if (pendingIconCategory) updateCategoryIcon(pendingIconCategory, icon); closeSheet(); }, allowAdd: false };
@@ -135,10 +150,6 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
                 >
                   <div className="relative w-full aspect-square rounded-2xl flex items-center justify-center transition-all" style={{ backgroundColor: isActive ? themeColor : 'white', color: isActive ? 'white' : 'var(--color-text-muted)', border: isActive ? 'none' : '1px solid #EEE' }}>
                     <Icon size={32} />
-                    {/* Edit icon overlay */}
-                    <button type="button" className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); setPendingIconCategory(name); openSheet('icon_picker_existing'); }}>
-                      <Edit size={16} className="text-white bg-black rounded-full" />
-                    </button>
                   </div>
                   <span className={`text-cat-label ${isActive ? 'text-black' : 'text-muted'}`}>{name}</span>
                   {isQuestion && (
@@ -180,9 +191,9 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
             </div>
           </div>
           <div className="flex gap-4 w-full">
-            <div className="flex flex-col gap-2 flex-1" style={{ width: '50%' }}>
+            <div className="flex flex-col gap-2 flex-1 cursor-pointer" style={{ width: '50%' }} onClick={() => openSheet('item')}>
               <label className="text-muted font-bold text-center">物品</label>
-              <input value={item} onChange={e => setItem(e.target.value)} className="btn-3d py-4 text-center bg-white w-full border-none" placeholder="輸入名稱" />
+              <div className="btn-3d py-4 text-xl font-bold bg-white w-full overflow-hidden text-ellipsis whitespace-nowrap">{item || '選擇物品'}</div>
             </div>
             <div className="flex flex-col gap-2 flex-1 cursor-pointer" style={{ width: '50%' }} onClick={() => openSheet('payment')}>
               <label className="text-muted font-bold text-center">支付</label>
@@ -257,6 +268,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
         type={sheetData.type} 
         onToggleFavorite={toggleFavoriteStore} 
         favoriteList={favoriteStores}
+        onDeleteOption={handleDeleteOption}
       />
     </div>
   );

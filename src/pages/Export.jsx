@@ -5,7 +5,8 @@ import {
   Compass, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { getSheetsUrl, saveSheetsUrl, fetchCloudData } from '../services/googleSheets';
-import { useApp } from '../context/AppContext';
+import { useApp, CATEGORY_ICONS } from '../context/AppContext';
+import BottomSheet from '../components/BottomSheet';
 
 export default function Export() {
   const [url, setUrl] = useState('');
@@ -13,6 +14,12 @@ export default function Export() {
   const [status, setStatus] = useState('idle'); // 'idle', 'testing', 'success', 'error'
   const [errorMsg, setErrorMsg] = useState('');
   const [stats, setStats] = useState(null);
+  
+  // Category Icon Management States
+  const { expenseCategories, incomeCategories, updateCategoryIcon } = useApp();
+  const [activeTab, setActiveTab] = useState('expense');
+  const [pendingCategory, setPendingCategory] = useState(null);
+  const [isIconSheetOpen, setIsIconSheetOpen] = useState(false);
 
   const { syncWithCloud, disconnectCloud } = useApp();
 
@@ -175,21 +182,86 @@ export default function Export() {
         </button>
       </div>
 
+      {/* Category Icon Customization Card */}
+      <div className="p-6 bg-white rounded-2xl btn-3d flex flex-col mb-8">
+        <h2 className="font-bold text-xl mb-3 flex items-center gap-2">
+          🎨 類別圖示管理設定
+        </h2>
+        <p className="text-sm text-muted mb-5 leading-relaxed">
+          點擊下方的主分類項目，即可為其更換顯示圖示！這將同時套用至首頁明細與記帳選單中。
+        </p>
+
+        {/* Tab Switcher */}
+        <div className="flex gap-4 mb-6">
+          <button 
+            onClick={() => setActiveTab('expense')}
+            className={`btn-3d flex-1 py-3 font-bold text-lg ${activeTab === 'expense' ? 'btn-3d-expense text-white' : 'text-muted bg-surface'}`}
+            style={{ borderRadius: '14px' }}
+          >
+            支出主分類
+          </button>
+          <button 
+            onClick={() => setActiveTab('income')}
+            className={`btn-3d flex-1 py-3 font-bold text-lg ${activeTab === 'income' ? 'btn-3d-income text-white' : 'text-muted bg-surface'}`}
+            style={{ borderRadius: '14px' }}
+          >
+            收入主分類
+          </button>
+        </div>
+
+        {/* Categories Grid */}
+        <div className="grid-cat">
+          {Object.entries(activeTab === 'expense' ? expenseCategories : incomeCategories).map(([name, data]) => {
+            const Icon = CATEGORY_ICONS[data.icon] || CATEGORY_ICONS['default'];
+            return (
+              <button 
+                key={name}
+                onClick={() => { setPendingCategory(name); setIsIconSheetOpen(true); }}
+                className="flex flex-col items-center gap-2 p-3 bg-surface hover:bg-gray-100 rounded-2xl border border-gray-50 transition-all hover:scale-105"
+                style={{ cursor: 'pointer', background: 'none' }}
+              >
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-gray-100 text-muted" style={{ color: activeTab === 'expense' ? 'var(--color-expense-dark)' : 'var(--color-income-dark)' }}>
+                  <Icon size={28} />
+                </div>
+                <span className="text-sm font-bold text-muted">{name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* GAS 部署指南卡片 */}
-      <div className="p-6 bg-white rounded-2xl btn-3d flex flex-col">
+      <div className="p-6 bg-white rounded-2xl btn-3d flex flex-col mb-8">
         <h2 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-main)' }}>
           <AlertTriangle size={20} className="text-primary" /> Google Sheets 設定說明
         </h2>
         <ol className="text-muted text-sm space-y-3 pl-4 list-decimal font-medium leading-relaxed">
           <li>建立或開啟一個 Google 試算表。</li>
           <li>點選上方選單的 <strong>「擴充功能」 &gt; 「Apps Script」</strong>。</li>
-          <li>貼上我們為您準備好的 API 程式碼（可於 <a href="file:///C:/Users/PRLA/.gemini/antigravity/brain/eec44bef-9f3c-41e0-996d-ee460a41f785/implementation_plan.md" target="_blank" rel="noreferrer" className="underline font-bold text-primary">實施計畫書</a> 中複製）。</li>
+          <li>貼上我們為您準備好的 API 程式碼（可於 實施計畫書 中複製）。</li>
           <li>點選 <strong>「儲存 💾」</strong>，接著點選右上角 <strong>「部署」 &gt; 「新增部署」</strong>。</li>
           <li>在新增部署中，點選齒輪選取 <strong>「網頁應用程式」</strong>。</li>
           <li>將網頁應用程式執行身分設為 <strong>「我」</strong>，存取權限設為 <strong>「所有人 (Anyone)」</strong>。</li>
           <li>完成部署，授予 Google 權限，並將產生的 <strong>Web App URL</strong> 貼回上方即可連線！</li>
         </ol>
       </div>
+
+      {/* Icon Selector Bottom Sheet */}
+      <BottomSheet 
+        isOpen={isIconSheetOpen}
+        onClose={() => { setIsIconSheetOpen(false); setPendingCategory(null); }}
+        title={`選擇 "${pendingCategory}" 的新圖示`}
+        options={Object.keys(CATEGORY_ICONS).filter(k => k !== 'default' && k !== 'HelpCircle')}
+        onSelect={(icon) => {
+          if (pendingCategory) {
+            updateCategoryIcon(pendingCategory, icon);
+          }
+          setIsIconSheetOpen(false);
+          setPendingCategory(null);
+        }}
+        allowAdd={false}
+        type="icon"
+      />
     </div>
   );
 }

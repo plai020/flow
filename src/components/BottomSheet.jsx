@@ -3,7 +3,8 @@ import { X, Plus, Star } from 'lucide-react';
 
 export default function BottomSheet({ 
   isOpen, onClose, title, options, onSelect, onAddNew, 
-  allowAdd = true, type, favoriteList = [], onToggleFavorite 
+  allowAdd = true, type, favoriteList = [], onToggleFavorite,
+  onDeleteOption
 }) {
   const [newItem, setNewItem] = useState('');
 
@@ -67,9 +68,25 @@ export default function BottomSheet({
           {!isStore && (
             <div className={gridClass}>
               {(Array.isArray(options) ? options : []).map(opt => (
-                <button key={opt} className="btn-3d py-5 text-lg font-bold text-center px-2 flex items-center justify-center min-h-20" style={{ backgroundColor: '#FFFFFF' }} onClick={() => { onSelect(opt); onClose(); }}>
-                  {opt}
-                </button>
+                <div key={opt} className="relative w-full">
+                  <button 
+                    className="btn-3d w-full py-5 text-lg font-bold text-center px-2 flex items-center justify-center min-h-20" 
+                    style={{ backgroundColor: '#FFFFFF' }} 
+                    onClick={() => { onSelect(opt); onClose(); }}
+                  >
+                    {opt}
+                  </button>
+                  {onDeleteOption && (
+                    <button 
+                      type="button"
+                      className="absolute -top-1 -right-1 bg-expense text-white rounded-full flex items-center justify-center shadow-md border border-white hover:bg-red-500 transition-colors"
+                      style={{ width: '22px', height: '22px', border: 'none', padding: 0, zIndex: 10, cursor: 'pointer' }}
+                      onClick={(e) => { e.stopPropagation(); onDeleteOption(opt); }}
+                    >
+                      <X size={12} strokeWidth={3} />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}

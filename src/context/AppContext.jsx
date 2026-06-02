@@ -63,6 +63,7 @@ export const AppProvider = ({ children }) => {
 
   const [payments, setPayments] = useState(() => loadInitialData('flow_payments', ['現金', '信用卡', 'Line Pay', 'Apple Pay']));
   const [commonUnits, setCommonUnits] = useState(() => loadInitialData('flow_common_units', ['個', '瓶', '杯', '箱', '顆', '斤']));
+  const [commonItems, setCommonItems] = useState(() => loadInitialData('flow_common_items', ['午餐', '晚餐', '飲料', '日用品', '零食']));
 
   // Cloud Sync State
   const [sheetsUrl, setSheetsUrl] = useState(() => getSheetsUrl());
@@ -82,6 +83,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('flow_store_branches', JSON.stringify(storeBranches)), [storeBranches]);
   useEffect(() => localStorage.setItem('flow_payments', JSON.stringify(payments)), [payments]);
   useEffect(() => localStorage.setItem('flow_common_units', JSON.stringify(commonUnits)), [commonUnits]);
+  useEffect(() => localStorage.setItem('flow_common_items', JSON.stringify(commonItems)), [commonItems]);
   useEffect(() => localStorage.setItem('flow_cat_icons', JSON.stringify(customCatIcons)), [customCatIcons]);
   useEffect(() => localStorage.setItem('flow_cloud_budget', JSON.stringify(cloudBudget)), [cloudBudget]);
   useEffect(() => localStorage.setItem('flow_cloud_items', JSON.stringify(cloudItems)), [cloudItems]);
@@ -90,6 +92,19 @@ export const AppProvider = ({ children }) => {
   const normalizeDate = (dateVal) => {
     if (!dateVal) return '';
     const dateStr = String(dateVal).trim();
+    
+    // If it is an ISO string with T or space followed by time, parse it using Date first to respect local timezone
+    if (dateStr.includes('T') || /\s\d{2}:\d{2}/.test(dateStr)) {
+      try {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+      } catch (e) {}
+    }
     
     // 1. Try regex extraction first to avoid timezone shift issues (e.g. "2026-05-21" or "2026/05/21")
     const match = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
@@ -465,6 +480,24 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  const deletePayment = (payVal) => {
+    setPayments(prev => prev.filter(p => p !== payVal));
+  };
+
+  const deleteBranch = (storeName, branchVal) => {
+    setStoreBranches(prev => {
+      const list = prev[storeName] || [];
+      return {
+        ...prev,
+        [storeName]: list.filter(b => b !== branchVal)
+      };
+    });
+  };
+
+  const deleteCommonItem = (itemVal) => {
+    setCommonItems(prev => prev.filter(i => i !== itemVal));
+  };
+
   const value = {
     transactions, addTransaction, updateTransaction, deleteTransaction,
     budgets, setBudgets,
@@ -475,9 +508,11 @@ export const AppProvider = ({ children }) => {
     storeBranches, setStoreBranches,
     payments, setPayments,
     commonUnits, setCommonUnits,
+    commonItems, setCommonItems,
     addCustomCategory, addSubCategory,
     sheetsUrl, cloudBudget, cloudItems, cloudActive, cloudLoading,
-    syncWithCloud, disconnectCloud, updateCategoryIcon, customCatIcons
+    syncWithCloud, disconnectCloud, updateCategoryIcon, customCatIcons,
+    deletePayment, deleteBranch, deleteCommonItem
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
