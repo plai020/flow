@@ -9,25 +9,24 @@ export default function BottomSheet({
   onDeleteOption
 }) {
   const [newItem, setNewItem] = useState('');
-
   if (!isOpen) return null;
-
   const handleAdd = () => {
     if (newItem.trim()) {
       onAddNew(newItem.trim());
       setNewItem('');
     }
   };
-
   const isStore = type === 'store';
-  // Use 3 columns for everything now as requested
   const gridClass = 'grid-3';
-
+  const panelStyle = {
+    maxWidth: '480px',
+    maxHeight: '85vh',
+    // CSS handles slide-up animation via .bottom-sheet-panel class
+  };
   const content = (
     <div className="fixed inset-0 z-200 flex flex-col justify-end" style={{ zIndex: 9999 }}>
       <div className="bottom-sheet-backdrop" onClick={onClose} />
-      
-      <div className="relative bottom-sheet-panel w-full mx-auto flex flex-col" style={{ maxWidth: '480px', maxHeight: '85vh', animation: 'panelUp 0.3s ease-out' }}>
+      <div className="relative bottom-sheet-panel w-full mx-auto flex flex-col" style={panelStyle}>
         <div className="flex justify-between items-center p-8" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <h3 className="font-bold text-2xl">{title}</h3>
           <button onClick={onClose} className="btn-3d w-12 h-12" style={{ backgroundColor: '#FFFFFF' }}><X size={28} /></button>
