@@ -170,7 +170,7 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
         {mainCategory && categories[mainCategory] && (
           <div className="mb-8 p-4 bg-surface rounded-2xl" style={{ animation: 'panelUp 0.3s ease-out' }}>
             <div className="text-muted font-bold mb-4 text-center text-lg">子分類</div>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="grid-2">
               {(categories[mainCategory].sub || []).map(sub => (
                 <button key={sub} className={`btn-3d px-6 py-3 font-bold text-lg ${subCategory === sub ? 'shadow-inner' : ''}`} style={{ backgroundColor: subCategory === sub ? themeColor : 'white', color: subCategory === sub ? 'white' : 'inherit' }} onClick={() => setSubCategory(sub)}>{sub}</button>
               ))}

@@ -212,6 +212,7 @@ body {
   flex-direction: column;
   max-width: 480px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .slide-up-panel {
@@ -234,6 +235,7 @@ body {
 }
 
 /* Grid Layouts */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .grid-cat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }

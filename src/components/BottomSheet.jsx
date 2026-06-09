@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Star } from 'lucide-react';
+import { CATEGORY_ICONS } from '../context/AppContext';
 
 export default function BottomSheet({ 
   isOpen, onClose, title, options, onSelect, onAddNew, 
@@ -74,7 +75,7 @@ export default function BottomSheet({
                     style={{ backgroundColor: '#FFFFFF' }} 
                     onClick={() => { onSelect(opt); onClose(); }}
                   >
-                    {opt}
+                    {type === 'icon' && CATEGORY_ICONS[opt] ? React.createElement(CATEGORY_ICONS[opt], { size: 32, className: "text-muted" }) : opt}
                   </button>
                   {onDeleteOption && (
                     <button 
