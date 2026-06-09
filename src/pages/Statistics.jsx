@@ -7,6 +7,10 @@ import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
+const CHART_COLORS = [
+  '#FF8AAE', '#9AD0EC', '#FFD93D', '#A78BFA', '#34D399', '#FB923C', '#F472B6', '#60A5FA', '#38BDF8', '#4ADE80'
+];
+
 export default function Statistics() {
   const [periodType, setPeriodType] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -45,28 +49,28 @@ export default function Statistics() {
   const stats = useMemo(() => {
     const list = transactions.filter(t => t.type === type && t.date >= startStr && t.date <= endStr);
     
-    // Trend Data
+    // Trend Data Grouped By Category
     const trendMap = {};
     const isDaily = periodType === 'month';
     const intervals = isDaily ? eachDayOfInterval({ start: s, end: e }) : eachMonthOfInterval({ start: s, end: e });
     
     intervals.forEach(date => {
       const key = isDaily ? format(date, 'd') : `${format(date, 'M')}月`;
-      trendMap[key] = 0;
+      trendMap[key] = {};
     });
 
-    // Rankings
     const catMap = {};
     const storeMap = {};
     let total = 0;
 
     list.forEach(t => {
       const trendKey = isDaily ? parseInt(t.date.split('-')[2], 10).toString() : `${parseInt(t.date.split('-')[1], 10)}月`;
+      const cat = t.mainCategory || '未分類';
+
       if (trendMap[trendKey] !== undefined) {
-        trendMap[trendKey] += t.amount;
+        trendMap[trendKey][cat] = (trendMap[trendKey][cat] || 0) + t.amount;
       }
       
-      const cat = t.mainCategory || '未分類';
       catMap[cat] = (catMap[cat] || 0) + t.amount;
 
       const store = t.mainStore || '未指定';
@@ -78,42 +82,53 @@ export default function Statistics() {
     const topCategories = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const topStores = Object.entries(storeMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+    // All categories found in the current period, sorted by amount
+    const allSortedCategories = Object.keys(catMap).sort((a, b) => catMap[b] - catMap[a]);
+
     return {
       trendLabels: Object.keys(trendMap),
-      trendData: Object.values(trendMap),
+      trendMap,
+      allSortedCategories,
       topCategories,
       topStores,
       total
     };
   }, [transactions, type, startStr, endStr, periodType, s, e]);
 
-  const activeColor = type === 'expense' ? '#FF8AAE' : '#9AD0EC';
   const activeColorClass = type === 'expense' ? 'text-expense' : 'text-income';
+
+  const datasets = stats.allSortedCategories.map((cat, idx) => ({
+    label: cat,
+    data: stats.trendLabels.map(label => stats.trendMap[label][cat] || 0),
+    backgroundColor: CHART_COLORS[idx % CHART_COLORS.length],
+    borderRadius: 4,
+  }));
 
   const chartData = {
     labels: stats.trendLabels,
-    datasets: [{
-      label: type === 'expense' ? '支出' : '收入',
-      data: stats.trendData,
-      backgroundColor: activeColor,
-      borderRadius: 4,
-    }]
+    datasets: datasets
   };
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { display: false },
+      legend: { 
+        display: datasets.length > 0, 
+        position: 'bottom',
+        labels: { boxWidth: 12, font: { size: 10, family: 'Outfit' } }
+      },
       tooltip: {
+        mode: 'index',
+        intersect: false,
         callbacks: {
-          label: (context) => `$${context.parsed.y.toLocaleString()}`
+          label: (context) => `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`
         }
       }
     },
     scales: {
-      y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-      x: { grid: { display: false } }
+      y: { stacked: true, beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { font: { family: 'Outfit' } } },
+      x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Outfit' } } }
     }
   };
 
@@ -151,10 +166,10 @@ export default function Statistics() {
           </div>
         </div>
 
-        {/* Trend Chart */}
+        {/* Trend Stacked Chart */}
         <div className="card-unit p-4 bg-white shadow-sm border border-gray-100 rounded-2xl flex flex-col">
           <h3 className="font-bold text-lg mb-4 text-center">趨勢圖</h3>
-          <div className="w-full" style={{ height: '220px' }}>
+          <div className="w-full" style={{ height: datasets.length > 5 ? '260px' : '220px' }}>
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
@@ -168,19 +183,22 @@ export default function Statistics() {
                 const catConfig = (type === 'expense' ? expenseCategories[cat] : incomeCategories[cat]) || { icon: 'HelpCircle' };
                 const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
                 const pct = stats.total > 0 ? Math.round((amount / stats.total) * 100) : 0;
+                // Use the same color as the chart
+                const color = CHART_COLORS[stats.allSortedCategories.indexOf(cat) % CHART_COLORS.length];
+                
                 return (
                   <div key={cat} className="flex items-center gap-3">
                     <div className="w-6 text-muted font-bold text-sm">{idx + 1}.</div>
                     <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center shrink-0">
-                      <Icon size={20} className={activeColorClass} />
+                      <Icon size={20} className={activeColorClass} style={{ color }} />
                     </div>
                     <div className="flex-1 flex flex-col">
                       <div className="flex justify-between">
                         <span className="font-bold">{cat}</span>
-                        <span className={`font-bold ${activeColorClass}`}>${amount.toLocaleString()}</span>
+                        <span className={`font-bold`} style={{ color }}>${amount.toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-gray-100 h-2 rounded-full mt-1 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: activeColor }}></div>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }}></div>
                       </div>
                     </div>
                   </div>
@@ -197,16 +215,17 @@ export default function Statistics() {
             <div className="flex flex-col gap-3">
               {stats.topStores.map(([store, amount], idx) => {
                 const pct = stats.total > 0 ? Math.round((amount / stats.total) * 100) : 0;
+                const color = type === 'expense' ? '#FF8AAE' : '#9AD0EC';
                 return (
                   <div key={store} className="flex items-center gap-3">
                     <div className="w-6 text-muted font-bold text-sm">{idx + 1}.</div>
                     <div className="flex-1 flex flex-col">
                       <div className="flex justify-between">
                         <span className="font-bold">{store}</span>
-                        <span className={`font-bold ${activeColorClass}`}>${amount.toLocaleString()}</span>
+                        <span className={`font-bold`} style={{ color }}>${amount.toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-gray-100 h-2 rounded-full mt-1 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: activeColor }}></div>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }}></div>
                       </div>
                     </div>
                   </div>

@@ -47,12 +47,12 @@ export default function Calendar() {
     if (!searchQuery.trim()) return [];
     const lowerQuery = searchQuery.toLowerCase();
     return transactions.filter(t => 
-      (t.mainStore && t.mainStore.toLowerCase().includes(lowerQuery)) ||
-      (t.item && t.item.toLowerCase().includes(lowerQuery)) ||
-      (t.note && t.note.toLowerCase().includes(lowerQuery)) ||
-      (t.mainCategory && t.mainCategory.toLowerCase().includes(lowerQuery)) ||
-      (t.subCategory && t.subCategory.toLowerCase().includes(lowerQuery))
-    ).sort((a, b) => b.date.localeCompare(a.date));
+      (t.mainStore && String(t.mainStore).toLowerCase().includes(lowerQuery)) ||
+      (t.item && String(t.item).toLowerCase().includes(lowerQuery)) ||
+      (t.note && String(t.note).toLowerCase().includes(lowerQuery)) ||
+      (t.mainCategory && String(t.mainCategory).toLowerCase().includes(lowerQuery)) ||
+      (t.subCategory && String(t.subCategory).toLowerCase().includes(lowerQuery))
+    ).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
   }, [searchQuery, transactions]);
 
   const handleEdit = (t) => {
@@ -273,7 +273,7 @@ export default function Calendar() {
                         </div>
                       </div>
                       <span className={`font-bold text-lg ${t.type === 'expense' ? 'text-expense' : 'text-income'}`}>
-                        ${t.amount.toLocaleString()}
+                        ${Number(t.amount || 0).toLocaleString()}
                       </span>
                     </div>
                   );

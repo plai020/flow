@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Star } from 'lucide-react';
 import { CATEGORY_ICONS } from '../context/AppContext';
 
@@ -22,8 +23,8 @@ export default function BottomSheet({
   // Use 3 columns for everything now as requested
   const gridClass = 'grid-3';
 
-  return (
-    <div className="fixed inset-0 z-200 flex flex-col justify-end">
+  const content = (
+    <div className="fixed inset-0 z-200 flex flex-col justify-end" style={{ zIndex: 9999 }}>
       <div className="bottom-sheet-backdrop" onClick={onClose} />
       
       <div className="relative bottom-sheet-panel w-full mx-auto flex flex-col" style={{ maxWidth: '480px', maxHeight: '85vh', animation: 'panelUp 0.3s ease-out' }}>
@@ -118,4 +119,6 @@ export default function BottomSheet({
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
