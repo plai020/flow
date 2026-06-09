@@ -11,6 +11,8 @@ export default function Calendar() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [expandedNodes, setExpandedNodes] = useState({});
   const [showActions, setShowActions] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { transactions, deleteTransaction, expenseCategories, incomeCategories } = useApp();
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
@@ -40,6 +42,18 @@ export default function Calendar() {
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const lowerQuery = searchQuery.toLowerCase();
+    return transactions.filter(t => 
+      (t.mainStore && t.mainStore.toLowerCase().includes(lowerQuery)) ||
+      (t.item && t.item.toLowerCase().includes(lowerQuery)) ||
+      (t.note && t.note.toLowerCase().includes(lowerQuery)) ||
+      (t.mainCategory && t.mainCategory.toLowerCase().includes(lowerQuery)) ||
+      (t.subCategory && t.subCategory.toLowerCase().includes(lowerQuery))
+    ).sort((a, b) => b.date.localeCompare(a.date));
+  }, [searchQuery, transactions]);
 
   const handleEdit = (t) => {
     setEditingTransaction(t);
@@ -188,7 +202,7 @@ export default function Calendar() {
           }}
         >
           <button 
-            onClick={() => { setShowActions(false); }} 
+            onClick={() => { setIsSearchModalOpen(true); setShowActions(false); }} 
             className="btn-3d w-12 h-12 bg-white shadow-lg rounded-full"
             style={{ padding: 0 }}
           >
@@ -219,6 +233,62 @@ export default function Calendar() {
         initialDate={selectedDateStr} 
         editData={editingTransaction}
       />
+
+      {/* Search Modal */}
+      {isSearchModalOpen && (
+        <div className="fixed inset-0 z-200 bg-surface flex flex-col" style={{ animation: 'panelUp 0.3s ease-out' }}>
+          <div className="p-4 bg-white border-b border-gray-100 flex items-center gap-3 shadow-sm pt-8">
+            <button onClick={() => { setIsSearchModalOpen(false); setSearchQuery(''); }} className="btn-3d p-2 text-muted">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex-1 relative">
+              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜尋歷史帳務 (商店、物品、備註)..." 
+                className="w-full bg-surface border-none rounded-xl py-3 pl-10 pr-4 font-bold outline-none"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            {searchQuery.trim() && searchResults.length === 0 ? (
+              <div className="text-center text-muted font-bold py-10">找不到符合的結果</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {searchResults.map(t => {
+                  const catConfig = (t.type === 'expense' ? expenseCategories[t.mainCategory] : incomeCategories[t.mainCategory]) || { icon: 'HelpCircle' };
+                  const Icon = CATEGORY_ICONS[catConfig.icon] || CATEGORY_ICONS['default'];
+                  return (
+                    <div key={t.id} onClick={() => handleEdit(t)} className="card-unit flex justify-between items-center cursor-pointer p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center">
+                          <Icon size={20} className={t.type === 'expense' ? 'text-expense' : 'text-income'} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-lg">{t.mainStore || t.payment || t.mainCategory}</span>
+                          <span className="text-muted text-xs">{t.date} · {t.item} {t.note}</span>
+                        </div>
+                      </div>
+                      <span className={`font-bold text-lg ${t.type === 'expense' ? 'text-expense' : 'text-income'}`}>
+                        ${t.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {!searchQuery.trim() && (
+              <div className="text-center text-light font-bold py-10 flex flex-col items-center">
+                <Search size={48} className="mb-4 opacity-50" />
+                請輸入關鍵字開始搜尋全歷史資料
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
