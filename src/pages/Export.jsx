@@ -230,27 +230,8 @@ export default function Export() {
         </div>
       </div>
 
-      {/* GAS 部署指南卡片 */}
-      <div className="p-6 bg-white rounded-2xl btn-3d flex flex-col mb-8">
-        <h2 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-main)' }}>
-          <AlertTriangle size={20} className="text-primary" /> Google Sheets 設定說明
-        </h2>
-        <ol className="text-muted text-sm space-y-3 pl-4 list-decimal font-medium leading-relaxed">
-          <li>建立或開啟一個 Google 試算表。</li>
-          <li>點選上方選單的 <strong>「擴充功能」 &gt; 「Apps Script」</strong>。</li>
-          <li>貼上我們為您準備好的 API 程式碼（可於 實施計畫書 中複製）。</li>
-          <li>點選 <strong>「儲存 💾」</strong>，接著點選右上角 <strong>「部署」 &gt; 「新增部署」</strong>。</li>
-          <li>在新增部署中，點選齒輪選取 <strong>「網頁應用程式」</strong>。</li>
-          <li>將網頁應用程式執行身分設為 <strong>「我」</strong>，存取權限設為 <strong>「所有人 (Anyone)」</strong>。</li>
-          <li>完成部署，授予 Google 權限，並將產生的 <strong>Web App URL</strong> 貼回上方即可連線！</li>
-        </ol>
-      </div>
 
-      {/* Icon Selector Bottom Sheet */}
-      <BottomSheet 
-        isOpen={isIconSheetOpen}
-        onClose={() => { setIsIconSheetOpen(false); setPendingCategory(null); }}
-        title={`選擇 "${pendingCategory}" 的新圖示`}
+
         options={Object.keys(CATEGORY_ICONS).filter(k => k !== 'default' && k !== 'HelpCircle')}
         onSelect={(icon) => {
           if (pendingCategory) {
