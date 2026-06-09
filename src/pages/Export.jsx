@@ -229,9 +229,10 @@ export default function Export() {
           })}
         </div>
       </div>
-
-
-
+      <BottomSheet
+        isOpen={isIconSheetOpen}
+        onClose={() => setIsIconSheetOpen(false)}
+        title="選擇圖示"
         options={Object.keys(CATEGORY_ICONS).filter(k => k !== 'default' && k !== 'HelpCircle')}
         onSelect={(icon) => {
           if (pendingCategory) {
