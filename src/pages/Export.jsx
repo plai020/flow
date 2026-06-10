@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Cloud, CloudLightning, CheckCircle2, XCircle, 
   Database, Eye, EyeOff, Link2, KeyRound, 
-  Compass, AlertTriangle, RefreshCw
+  Compass, AlertTriangle, RefreshCw, Scan, Lock
 } from 'lucide-react';
 import { getSheetsUrl, saveSheetsUrl, fetchCloudData } from '../services/googleSheets';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 import BottomSheet from '../components/BottomSheet';
+import OcrImportModal from '../components/OcrImportModal';
+import { getGeminiKey, saveGeminiKey } from '../services/ocrService';
 
 export default function Export() {
   const [url, setUrl] = useState('');
@@ -14,6 +16,11 @@ export default function Export() {
   const [status, setStatus] = useState('idle'); // 'idle', 'testing', 'success', 'error'
   const [errorMsg, setErrorMsg] = useState('');
   const [stats, setStats] = useState(null);
+
+  // Gemini API Key States
+  const [geminiKey, setGeminiKey] = useState('');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
   
   // Category Icon Management States
   const { expenseCategories, incomeCategories, updateCategoryIcon } = useApp();
@@ -30,7 +37,14 @@ export default function Export() {
       setUrl(savedUrl);
       testConnection(savedUrl, false); // 自動背景測試
     }
+    // 載入已儲存的 Gemini Key
+    setGeminiKey(getGeminiKey());
   }, []);
+
+  const handleSaveGeminiKey = (val) => {
+    setGeminiKey(val);
+    saveGeminiKey(val);
+  };
 
   const testConnection = async (testUrl, showSuccessAlert = true) => {
     if (!testUrl || !testUrl.trim()) {
@@ -82,8 +96,45 @@ export default function Export() {
           <Cloud size={36} className={status === 'success' ? 'text-primary' : 'text-light'} />
         </div>
         <h1 className="font-bold text-3xl text-center">雲端控制中心</h1>
-        <p className="text-muted text-center text-md mt-1">Google Sheets 試算表同步設定</p>
+        <p className="text-muted text-center text-md mt-1">Google Sheets 試算表同步與 OCR 設定</p>
       </div>
+
+      {/* OCR 收據辨識快速控制面板 */}
+      <div className="p-6 bg-white rounded-2xl btn-3d flex flex-col mb-8">
+        <h2 className="font-bold text-xl mb-4 flex items-center gap-2">
+          <Scan size={20} className="text-primary" /> 掃描收據記帳
+        </h2>
+        <p className="text-sm text-muted mb-5 leading-relaxed">
+          支援全聯與家樂福行動支付收據明細截圖，自動辨識日期、分店及逐筆消費品項並批次寫入帳簿。
+        </p>
+
+        {/* Gemini API Key 輸入 */}
+        <div className="relative mb-5">
+          <input 
+            type={showGeminiKey ? "text" : "password"} 
+            className="w-full p-4 bg-surface border-none rounded-xl shadow-inner outline-none font-bold text-md pr-14"
+            placeholder="請輸入 Gemini API Key"
+            value={geminiKey}
+            onChange={e => handleSaveGeminiKey(e.target.value)}
+          />
+          <button 
+            type="button"
+            onClick={() => setShowGeminiKey(!showGeminiKey)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted"
+            style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+          >
+            {showGeminiKey ? <EyeOff size={22} /> : <Eye size={22} />}
+          </button>
+        </div>
+
+        <button 
+          onClick={() => setOcrOpen(true)}
+          className="btn-3d btn-3d-primary w-full py-4 text-lg font-bold rounded-xl flex items-center justify-center gap-2"
+        >
+          <Scan size={20} /> 立即開啟掃描控制台
+        </button>
+      </div>
+
 
       {/* 連線狀態卡片 */}
       <div className="btn-3d p-6 bg-white rounded-2xl mb-8 flex flex-col items-center">
@@ -243,6 +294,10 @@ export default function Export() {
         }}
         allowAdd={false}
         type="icon"
+      />
+      <OcrImportModal 
+        isOpen={ocrOpen} 
+        onClose={() => setOcrOpen(false)} 
       />
     </div>
   );

@@ -1,0 +1,689 @@
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { 
+  X, Upload, RefreshCw, CheckCircle2, AlertTriangle, Plus, Trash2, Edit3 
+} from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { recognizeReceipt, getGeminiKey } from '../services/ocrService';
+
+export default function OcrImportModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+
+  const { 
+    addTransaction, 
+    expenseCategories, 
+    storeBranches, 
+    payments, 
+    setStoreBranches 
+  } = useApp();
+
+  // Step 1: upload/recognize, Step 2: edit/preview, Step 3: finished
+  const [step, setStep] = useState(1);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [storeType, setStoreType] = useState('auto'); // 'auto', '全聯', '家樂福'
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Step 2 Form States
+  const [receiptData, setReceiptData] = useState({
+    storeType: '全聯',
+    date: new Date().toISOString().split('T')[0],
+    branch: '',
+    items: [], // { id, name, amount, note, mainCategory, subCategory, payment, checked }
+    total: 0
+  });
+
+  // For custom branch text entry
+  const [isCustomBranch, setIsCustomBranch] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setErrorMsg('');
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleStartOcr = async () => {
+    if (!selectedFile) {
+      setErrorMsg('請先選擇或拍攝收據圖片');
+      return;
+    }
+
+    const apiKey = getGeminiKey();
+    if (!apiKey) {
+      setErrorMsg('請先在設定頁面填入 Gemini API Key');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const result = await recognizeReceipt(selectedFile, storeType, apiKey);
+      
+      // Map result to our Form state structure
+      const finalStoreType = result.storeType === '家樂福' ? '家樂福' : '全聯';
+      const parsedItems = [];
+
+      // Combine regular items
+      if (Array.isArray(result.items)) {
+        result.items.forEach((item, idx) => {
+          parsedItems.push({
+            id: `item-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
+            name: item.name || '',
+            amount: Number(item.amount) || 0,
+            note: item.note || '',
+            mainCategory: '餐飲',
+            subCategory: '食材',
+            payment: 'pi錢包',
+            checked: true
+          });
+        });
+      }
+
+      // Append discount items as negative numbers if PX mart
+      if (finalStoreType === '全聯' && Array.isArray(result.discounts)) {
+        result.discounts.forEach((disc, idx) => {
+          parsedItems.push({
+            id: `disc-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
+            name: disc.name || '折扣項目',
+            amount: Number(disc.amount) || 0,
+            note: '折扣優惠',
+            mainCategory: '餐飲',
+            subCategory: '食材',
+            payment: 'pi錢包',
+            checked: true
+          });
+        });
+      }
+
+      // Check if branch name is in storeBranches
+      const branches = storeBranches[finalStoreType] || [];
+      const branchName = (result.branch || '').trim();
+      const hasBranch = branches.includes(branchName);
+
+      setReceiptData({
+        storeType: finalStoreType,
+        date: result.date || new Date().toISOString().split('T')[0],
+        branch: branchName || (branches[0] || ''),
+        items: parsedItems,
+        total: Number(result.total) || 0
+      });
+
+      setIsCustomBranch(!hasBranch && branchName.length > 0);
+      setStep(2);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || '辨識失敗，請重試或點擊下方「手動空白輸入模式」');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const enterManualMode = () => {
+    setErrorMsg('');
+    const defaultStore = '全聯';
+    const branches = storeBranches[defaultStore] || [];
+    setReceiptData({
+      storeType: defaultStore,
+      date: new Date().toISOString().split('T')[0],
+      branch: branches[0] || '',
+      items: [
+        {
+          id: `item-manual-${Date.now()}`,
+          name: '',
+          amount: 0,
+          note: '',
+          mainCategory: '餐飲',
+          subCategory: '食材',
+          payment: 'pi錢包',
+          checked: true
+        }
+      ],
+      total: 0
+    });
+    setIsCustomBranch(false);
+    setStep(2);
+  };
+
+  // Step 2 functions
+  const handleStoreTypeChange = (type) => {
+    const branches = storeBranches[type] || [];
+    setReceiptData(prev => ({
+      ...prev,
+      storeType: type,
+      branch: branches[0] || ''
+    }));
+    setIsCustomBranch(false);
+  };
+
+  const handleBranchChange = (branchVal) => {
+    setReceiptData(prev => ({ ...prev, branch: branchVal }));
+  };
+
+  const handleAddField = () => {
+    setReceiptData(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: `item-manual-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          name: '',
+          amount: 0,
+          note: '',
+          mainCategory: '餐飲',
+          subCategory: '食材',
+          payment: 'pi錢包',
+          checked: true
+        }
+      ]
+    }));
+  };
+
+  const handleRemoveItem = (id) => {
+    setReceiptData(prev => ({
+      ...prev,
+      items: prev.items.filter(item => item.id !== id)
+    }));
+  };
+
+  const updateItemField = (id, field, value) => {
+    setReceiptData(prev => ({
+      ...prev,
+      items: prev.items.map(item => {
+        if (item.id === id) {
+          const updated = { ...item, [field]: value };
+          // If mainCategory changed, set subCategory to its first sub-category
+          if (field === 'mainCategory') {
+            const subs = expenseCategories[value]?.sub || [];
+            updated.subCategory = subs[0] || '';
+          }
+          return updated;
+        }
+        return item;
+      })
+    }));
+  };
+
+  const handleToggleChecked = (id) => {
+    setReceiptData(prev => ({
+      ...prev,
+      items: prev.items.map(item => 
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    }));
+  };
+
+  const handleToggleAll = (checked) => {
+    setReceiptData(prev => ({
+      ...prev,
+      items: prev.items.map(item => ({ ...item, checked }))
+    }));
+  };
+
+  // Calculate items sum
+  const sumAmount = receiptData.items
+    .filter(item => item.checked)
+    .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+  const isAmountMatching = Math.abs(sumAmount - receiptData.total) < 0.01;
+
+  const handleImport = () => {
+    const itemsToImport = receiptData.items.filter(item => item.checked);
+    if (itemsToImport.length === 0) {
+      alert('請至少勾選一筆明細進行匯入');
+      return;
+    }
+
+    // Dynamic addition of new branch if it is customized and not already stored
+    const store = receiptData.storeType;
+    const currentBranch = receiptData.branch.trim();
+    if (currentBranch && !storeBranches[store]?.includes(currentBranch)) {
+      const updatedList = [...(storeBranches[store] || []), currentBranch];
+      setStoreBranches(prev => {
+        const next = { ...prev, [store]: updatedList };
+        localStorage.setItem('flow_store_branches', JSON.stringify(next));
+        return next;
+      });
+    }
+
+    // Import transactions sequentially
+    itemsToImport.forEach(item => {
+      addTransaction({
+        date: receiptData.date,
+        type: 'expense',
+        mainCategory: item.mainCategory,
+        subCategory: item.subCategory,
+        amount: Number(item.amount),
+        mainStore: receiptData.storeType,
+        branch: receiptData.branch,
+        item: item.name || '未命名項目',
+        payment: item.payment,
+        note: item.note || ''
+      });
+    });
+
+    setStep(3);
+  };
+
+  const handleReset = () => {
+    setStep(1);
+    setSelectedFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl('');
+    setErrorMsg('');
+  };
+
+  return createPortal(
+    <div className="modal-overlay">
+      {/* Header */}
+      <div className="flex justify-between items-center p-6 bg-white border-b border-gray-100">
+        <h2 className="font-bold text-2xl">
+          {step === 1 && '掃描收據明細'}
+          {step === 2 && '預覽與核對明細'}
+          {step === 3 && '匯入完成'}
+        </h2>
+        <button onClick={onClose} className="btn-3d w-10 h-10 p-0 bg-white">
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto bg-surface pb-24">
+        {/* STEP 1: Upload receipt photo / configure ocr */}
+        {step === 1 && (
+          <div className="p-6 flex flex-col gap-6">
+            {/* Store selector */}
+            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4">
+              <span className="font-bold text-lg text-muted">1. 選擇收據商店類型</span>
+              <div className="flex gap-3">
+                {['auto', '全聯', '家樂福'].map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setStoreType(t)}
+                    className={`btn-3d flex-1 py-3 text-md ${storeType === t ? 'btn-3d-primary text-black' : 'bg-surface text-muted'}`}
+                  >
+                    {t === 'auto' ? '自動偵測' : t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Photo Uploader */}
+            <label className="btn-3d p-8 bg-white rounded-2xl flex flex-col items-center justify-center border-2 border-dashed border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {previewUrl ? (
+                <div className="flex flex-col items-center gap-3 w-full">
+                  <img
+                    src={previewUrl}
+                    alt="收據預覽"
+                    className="max-h-60 max-w-full rounded-xl object-contain shadow-sm"
+                  />
+                  <span className="font-bold text-sm text-primary flex items-center gap-1">
+                    <Upload size={16} /> 更換收據圖片
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="w-16 h-16 rounded-full bg-yellow-50 flex items-center justify-center text-primary">
+                    <Upload size={32} />
+                  </div>
+                  <span className="font-bold text-lg">拍攝或選擇收據截圖</span>
+                  <span className="text-sm text-muted text-center">支援全聯 PX Pay / 家樂福錢包之消費明細截圖</span>
+                </div>
+              )}
+            </label>
+
+            {/* Error Message */}
+            {errorMsg && (
+              <div className="p-4 bg-red-50 border border-red-200 text-expense rounded-xl flex gap-2 items-start">
+                <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
+                <div className="flex-col flex gap-1">
+                  <span className="font-bold text-md leading-normal">{errorMsg}</span>
+                  <button 
+                    onClick={enterManualMode} 
+                    className="text-left font-bold text-sm underline hover:text-red-700 cursor-pointer mt-1"
+                  >
+                    切換手動空白輸入模式 &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                type="button"
+                onClick={handleStartOcr}
+                disabled={loading || !selectedFile}
+                className="btn-3d btn-3d-primary w-full py-4 text-xl font-bold flex items-center justify-center gap-2"
+                style={{ opacity: (!selectedFile || loading) ? 0.6 : 1 }}
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw size={24} className="animate-spin" />
+                    正在分析明細...
+                  </>
+                ) : (
+                  '開始智慧辨識'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={enterManualMode}
+                disabled={loading}
+                className="btn-3d w-full py-4 text-lg font-bold bg-white text-muted"
+              >
+                手動空白輸入模式
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Edit items & Preview */}
+        {step === 2 && (
+          <div className="p-4 flex flex-col gap-5">
+            {/* Header info */}
+            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4">
+              {/* Store & Date row */}
+              <div className="flex gap-4">
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-sm font-bold text-muted">商店</label>
+                  <div className="flex gap-2">
+                    {['全聯', '家樂福'].map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => handleStoreTypeChange(s)}
+                        className={`btn-3d flex-1 py-2 text-md rounded-xl ${receiptData.storeType === s ? 'btn-3d-primary text-black' : 'bg-surface text-muted'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-sm font-bold text-muted">日期</label>
+                  <input
+                    type="date"
+                    value={receiptData.date}
+                    onChange={e => setReceiptData(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full p-3 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Branch Selector & Overwrite */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-muted">分店名稱</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCustomBranch(!isCustomBranch)}
+                    className="text-xs font-bold text-primary flex items-center gap-1"
+                  >
+                    <Edit3 size={12} /> {isCustomBranch ? '選擇現有分店' : '手動填寫分店'}
+                  </button>
+                </div>
+
+                {isCustomBranch ? (
+                  <input
+                    type="text"
+                    placeholder="請輸入分店名稱 (如：信義店)"
+                    value={receiptData.branch}
+                    onChange={e => handleBranchChange(e.target.value)}
+                    className="w-full p-4 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none"
+                  />
+                ) : (
+                  <select
+                    value={receiptData.branch}
+                    onChange={e => handleBranchChange(e.target.value)}
+                    className="w-full p-4 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none"
+                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                  >
+                    <option value="">請選擇分店</option>
+                    {(storeBranches[receiptData.storeType] || []).map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            {/* Items List Table */}
+            <div className="btn-3d p-4 bg-white rounded-2xl flex flex-col gap-3">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="font-bold text-lg">商品明細清單</span>
+                <div className="flex gap-4 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAll(true)}
+                    className="text-sm font-bold text-primary"
+                  >
+                    全選
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAll(false)}
+                    className="text-sm font-bold text-muted"
+                  >
+                    全不選
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 mt-2">
+                {receiptData.items.map((item, idx) => {
+                  const subs = expenseCategories[item.mainCategory]?.sub || [];
+                  return (
+                    <div 
+                      key={item.id} 
+                      className={`p-4 rounded-xl border border-gray-100 flex flex-col gap-3 transition-colors ${item.checked ? 'bg-white' : 'bg-gray-50 opacity-60'}`}
+                      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                    >
+                      {/* Top Checkbox & Delete */}
+                      <div className="flex justify-between items-center gap-2">
+                        <label className="flex items-center gap-3 cursor-pointer flex-1">
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={() => handleToggleChecked(item.id)}
+                            className="w-6 h-6 rounded-lg text-primary accent-yellow-400"
+                          />
+                          <span className="text-sm font-bold text-muted">品項 #{idx + 1}</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="text-red-400 hover:text-expense p-1"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
+                      {/* Name & Amount inputs */}
+                      <div className="flex gap-3">
+                        <div className="flex-[3] flex flex-col gap-1">
+                          <input
+                            type="text"
+                            placeholder="品名"
+                            value={item.name}
+                            onChange={e => updateItemField(item.id, 'name', e.target.value)}
+                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none"
+                          />
+                        </div>
+                        <div className="flex-[2] flex flex-col gap-1">
+                          <input
+                            type="number"
+                            placeholder="金額"
+                            value={item.amount || ''}
+                            onChange={e => updateItemField(item.id, 'amount', e.target.value)}
+                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none text-right"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Dropdowns for category & payment */}
+                      <div className="grid-3 gap-2">
+                        {/* Main Category */}
+                        <div className="flex flex-col gap-1">
+                          <select
+                            value={item.mainCategory}
+                            onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
+                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
+                          >
+                            {Object.keys(expenseCategories).map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Sub Category */}
+                        <div className="flex flex-col gap-1">
+                          <select
+                            value={item.subCategory}
+                            onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
+                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
+                          >
+                            {subs.map(sub => (
+                              <option key={sub} value={sub}>{sub}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Payment */}
+                        <div className="flex flex-col gap-1">
+                          <select
+                            value={item.payment}
+                            onChange={e => updateItemField(item.id, 'payment', e.target.value)}
+                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
+                          >
+                            {payments.map(p => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Note Input */}
+                      <input
+                        type="text"
+                        placeholder="備註資訊 (非必填)"
+                        value={item.note}
+                        onChange={e => updateItemField(item.id, 'note', e.target.value)}
+                        className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-sm font-normal outline-none"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add row button */}
+              <button
+                type="button"
+                onClick={handleAddField}
+                className="mt-3 btn-3d py-3 bg-surface border border-dashed border-gray-300 font-bold text-sm text-primary flex items-center justify-center gap-1"
+              >
+                <Plus size={16} /> 新增明細欄位
+              </button>
+            </div>
+
+            {/* Validation & Totals */}
+            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-3">
+              <div className="flex justify-between items-center font-bold text-md">
+                <span className="text-muted">已勾選品項合計：</span>
+                <span className="text-xl text-black">${sumAmount}</span>
+              </div>
+              <div className="flex justify-between items-center font-bold text-md">
+                <span className="text-muted">收據辨識總金額：</span>
+                <span className="text-xl text-black">${receiptData.total}</span>
+              </div>
+
+              {/* Red warning when sums don't match, but allow override */}
+              {!isAmountMatching && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2 text-expense text-xs font-bold">
+                  <AlertTriangle size={18} className="flex-shrink-0" />
+                  <span>
+                    提示：項目金額總計 (${sumAmount}) 與收據總金額 (${receiptData.total}) 不符。若無誤仍可強制匯入。
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Step 2 Actions */}
+            <div className="flex gap-4 mt-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="btn-3d flex-1 py-4 text-lg font-bold bg-white text-muted"
+              >
+                重新上傳
+              </button>
+
+              <button
+                type="button"
+                onClick={handleImport}
+                className="btn-3d btn-3d-primary flex-2 py-4 text-xl font-bold"
+              >
+                確認並匯入明細
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Complete screen */}
+        {step === 3 && (
+          <div className="p-6 flex flex-col items-center justify-center text-center py-16 gap-6">
+            <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center text-green-500 shadow-inner">
+              <CheckCircle2 size={48} className="fill-green-100" />
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <span className="font-bold text-2xl">匯入明細成功！</span>
+              <span className="text-md text-muted leading-relaxed">
+                已成功將 {receiptData.items.filter(item => item.checked).length} 筆消費明細批次寫入 Flow 帳簿中。
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full mt-6">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="btn-3d btn-3d-primary w-full py-4 text-lg font-bold"
+              >
+                繼續掃描下一張
+              </button>
+              
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-3d w-full py-4 text-lg font-bold bg-white text-muted"
+              >
+                關閉控制台
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
