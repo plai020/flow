@@ -303,6 +303,9 @@ body {
   transition: opacity 0.3s ease;
   z-index: 300;
 }
+.bottom-sheet-backdrop.hidden {
+  display: none;
+}
 
 .bottom-sheet-panel {
   background-color: #F2F3F5 !important; /* Elegant light warm grey base */
@@ -312,5 +315,9 @@ body {
   border-top-right-radius: 30px;
   z-index: 310;
   transform: translateY(100%);
-  animation: panelUp 0.3s ease-out forwards;
+  transition: transform 0.3s ease-out;
+}
+
+.bottom-sheet-panel.open {
+  transform: translateY(0);
 }
