@@ -7,8 +7,6 @@ import { useApp } from '../context/AppContext';
 import { recognizeReceipt, getGeminiKey } from '../services/ocrService';
 
 export default function OcrImportModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
   const { 
     addTransaction, 
     expenseCategories, 
@@ -279,10 +277,20 @@ export default function OcrImportModal({ isOpen, onClose }) {
   const handleReset = () => {
     setStep(1);
     setSelectedFile(null);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl('');
+    setPreviewUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return '';
+    });
     setErrorMsg('');
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      handleReset();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return createPortal(
     <div className="modal-overlay">
@@ -326,17 +334,16 @@ export default function OcrImportModal({ isOpen, onClose }) {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="hidden"
+                style={{ display: 'none' }}
               />
               {previewUrl ? (
-                <div className="flex flex-col items-center gap-3 w-full">
-                  <img
-                    src={previewUrl}
-                    alt="收據預覽"
-                    className="max-h-60 max-w-full rounded-xl object-contain shadow-sm"
-                  />
-                  <span className="font-bold text-sm text-primary flex items-center gap-1">
-                    <Upload size={16} /> 更換收據圖片
+                <div className="flex flex-col items-center gap-3 py-6 w-full">
+                  <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center text-green-500 shadow-inner">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <span className="font-bold text-lg">截圖已成功匯入</span>
+                  <span className="font-bold text-sm text-primary flex items-center gap-1 mt-1">
+                    <Upload size={16} /> 點此更換收據圖片
                   </span>
                 </div>
               ) : (

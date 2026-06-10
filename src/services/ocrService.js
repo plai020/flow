@@ -60,6 +60,8 @@ const AUTO_PROMPT = `請分析這張行動支付購物記錄截圖（可能是�
 全聯規則：branch 從頂部標題前 4 中文字；date 從「交易日期」；items 從「消費明細」金額 0 跳過，數量≥2 note 填"N個"；discounts 從「優惠活動折扣金額」填負值，保留完整名稱；total 從「消費金額」。
 家樂福規則：branch 從頂部標題第一個中文字起取 4 字；date 從上方日期框；items 從「消費列表」每行獨立不合併，金額 0 跳過，數量≥2 note 填"N個"；discounts 固定[]；total 從「消費金額」。`;
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 // ── 主辨識函式 ────────────────────────────────────────────────────
 /**
  * @param {File} file         - 圖片檔案
@@ -77,52 +79,47 @@ export async function recognizeReceipt(file, storeType = 'auto', apiKey) {
     storeType === '家樂福' ? CARREFOUR_PROMPT :
     AUTO_PROMPT;
 
-  let response;
   try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType, data: base64 } }
-            ]
-          }],
-          generationConfig: { temperature: 0.1, topP: 0.95 }
-        })
-      }
-    );
-  } catch (networkErr) {
-    throw new Error('網路連線失敗，請確認網路狀態後重試');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType, data: base64 } }
+        ]
+      }],
+      generationConfig: { temperature: 0.1, topP: 0.95 }
+    });
+
+    const response = await result.response;
+    const rawText = response.text();
+
+    // 嘗試從回傳文字中提取 JSON
+    const match = rawText.match(/\{[\s\S]*\}/);
+    if (!match) {
+      console.error('Gemini 原始回傳：', rawText);
+      throw new Error('無法從辨識結果提取資料，圖片可能過於模糊或格式不符。請切換至手動輸入模式。');
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      throw new Error('JSON 解析失敗，請嘗試重新上傳較清晰的圖片，或切換手動輸入模式。');
+    }
+
+    return parsed;
+  } catch (err) {
+    console.error(err);
+    if (err.message && (err.message.includes('API key') || err.message.includes('key is invalid'))) {
+      throw new Error(`API Key 無效或錯誤：${err.message}`);
+    }
+    if (err.message && err.message.includes('429')) {
+      throw new Error('API 呼叫次數已達上限，請稍後再試');
+    }
+    throw new Error(err.message || '辨識失敗，請確認網路狀態後重試');
   }
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    const msg = errData?.error?.message || `API 請求失敗（HTTP ${response.status}）`;
-    if (response.status === 400) throw new Error(`API Key 無效或圖片格式不支援：${msg}`);
-    if (response.status === 429) throw new Error('API 呼叫次數已達上限，請稍後再試');
-    throw new Error(msg);
-  }
-
-  const data = await response.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-  // 嘗試從回傳文字中提取 JSON
-  const match = rawText.match(/\{[\s\S]*\}/);
-  if (!match) {
-    console.error('Gemini 原始回傳：', rawText);
-    throw new Error('無法從辨識結果提取資料，圖片可能過於模糊或格式不符。請切換至手動輸入模式。');
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(match[0]);
-  } catch {
-    throw new Error('JSON 解析失敗，請嘗試重新上傳較清晰的圖片，或切換手動輸入模式。');
-  }
-
-  return parsed;
 }
