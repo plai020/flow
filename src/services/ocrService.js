@@ -62,6 +62,10 @@ const AUTO_PROMPT = `請分析這張行動支付購物記錄截圖（可能是�
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// 獨立定義當前最新穩定的 Gemini 模型版本
+// 未來若需更新模型，只需修改此變數即可
+export const GEMINI_MODEL_VERSION = "gemini-3.5-flash";
+
 // ── 主辨識函式 ────────────────────────────────────────────────────
 /**
  * @param {File} file         - 圖片檔案
@@ -81,7 +85,7 @@ export async function recognizeReceipt(file, storeType = 'auto', apiKey) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_VERSION });
 
     const result = await model.generateContent({
       contents: [{
@@ -119,6 +123,9 @@ export async function recognizeReceipt(file, storeType = 'auto', apiKey) {
     }
     if (err.message && err.message.includes('429')) {
       throw new Error('API 呼叫次數已達上限，請稍後再試');
+    }
+    if (err.message && (err.message.includes('404') || err.message.toLowerCase().includes('not found'))) {
+      throw new Error('該模型可能已更新或退役，請檢查 API 文件並更新模型名稱。');
     }
     throw new Error(err.message || '辨識失敗，請確認網路狀態後重試');
   }
