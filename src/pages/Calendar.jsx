@@ -150,8 +150,8 @@ export default function Calendar() {
                           <div className="flex items-center" style={{ gap: '10px' }}>
                             <span className="font-bold text-lg">{t.amount}</span>
                             <div className="flex" style={{ gap: '6px' }}>
-                              <button onClick={() => handleEdit(t)} className="text-light" style={{ background: 'none', border: 'none', padding: '2px' }}><Edit2 size={16} /></button>
-                              <button onClick={() => deleteTransaction(t.id)} className="text-expense" style={{ background: 'none', border: 'none', padding: '2px' }}><Trash2 size={16} /></button>
+                              <button onClick={() => handleEdit(t)} className="text-light hover:text-primary" style={{ background: 'none', border: 'none', padding: '8px', margin: '-6px' }}><Edit2 size={18} /></button>
+                              <button onClick={() => { if(window.confirm('確定要刪除此紀錄嗎？')) deleteTransaction(t.id); }} className="text-expense" style={{ background: 'none', border: 'none', padding: '8px', margin: '-6px' }}><Trash2 size={18} /></button>
                             </div>
                           </div>
                         </div>
@@ -215,14 +215,6 @@ export default function Calendar() {
             style={{ padding: 0 }}
           >
             <Plus size={22} />
-          </button>
-          
-          <button 
-            onClick={() => { setShowActions(false); }} 
-            className="btn-3d w-12 h-12 bg-white shadow-lg rounded-full"
-            style={{ padding: 0 }}
-          >
-            <ScanText size={20} className="text-muted" />
           </button>
         </div>
       )}

@@ -426,7 +426,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                 </div>
 
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-sm font-bold text-muted">日期</label>
+                  <label className="text-md font-bold text-muted">日期</label>
                   <input
                     type="date"
                     value={receiptData.date}
@@ -439,13 +439,13 @@ export default function OcrImportModal({ isOpen, onClose }) {
               {/* Branch Selector & Overwrite */}
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-bold text-muted">分店名稱</label>
+                  <label className="text-md font-bold text-muted">分店名稱</label>
                   <button 
                     type="button" 
                     onClick={() => setIsCustomBranch(!isCustomBranch)}
-                    className="text-xs font-bold text-primary flex items-center gap-1"
+                    className="text-sm font-bold text-primary flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-gray-50"
                   >
-                    <Edit3 size={12} /> {isCustomBranch ? '選擇現有分店' : '手動填寫分店'}
+                    <Edit3 size={14} /> {isCustomBranch ? '選擇現有分店' : '手動填寫分店'}
                   </button>
                 </div>
 
@@ -474,7 +474,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
 
               {/* Global Payment Method */}
               <div className="flex flex-col gap-1 border-t border-gray-100 pt-3">
-                <label className="text-sm font-bold text-muted">支付方式</label>
+                <label className="text-md font-bold text-muted">支付方式</label>
                 <select
                   value={receiptData.payment}
                   onChange={e => setReceiptData(prev => ({ ...prev, payment: e.target.value }))}
@@ -492,18 +492,18 @@ export default function OcrImportModal({ isOpen, onClose }) {
             <div className="btn-3d p-4 bg-white rounded-2xl flex flex-col gap-3">
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="font-bold text-lg">商品明細清單</span>
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-2 items-center">
                   <button
                     type="button"
                     onClick={() => handleToggleAll(true)}
-                    className="text-sm font-bold text-primary"
+                    className="btn-3d px-3 py-2 text-md font-bold text-primary bg-white rounded-xl"
                   >
                     全選
                   </button>
                   <button
                     type="button"
                     onClick={() => handleToggleAll(false)}
-                    className="text-sm font-bold text-muted"
+                    className="btn-3d px-3 py-2 text-md font-bold text-muted bg-white rounded-xl"
                   >
                     全不選
                   </button>
@@ -521,21 +521,25 @@ export default function OcrImportModal({ isOpen, onClose }) {
                     >
                       {/* Top Checkbox & Delete */}
                       <div className="flex justify-between items-center gap-2">
-                        <label className="flex items-center gap-3 cursor-pointer flex-1">
+                        <label className="flex items-center gap-4 cursor-pointer flex-1 py-2">
                           <input
                             type="checkbox"
                             checked={item.checked}
                             onChange={() => handleToggleChecked(item.id)}
-                            className="w-6 h-6 rounded-lg text-primary accent-yellow-400"
+                            className="w-8 h-8 rounded-lg text-primary accent-yellow-400"
                           />
-                          <span className="text-sm font-bold text-muted">品項 #{idx + 1}</span>
+                          <span className="text-md font-bold text-muted">品項 #{idx + 1}</span>
                         </label>
                         <button
                           type="button"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="text-red-400 hover:text-expense p-1"
+                          onClick={() => {
+                            if (window.confirm('確定要刪除此明細嗎？')) {
+                              handleRemoveItem(item.id);
+                            }
+                          }}
+                          className="text-red-400 hover:text-expense p-3 -mr-2 rounded-xl btn-3d bg-white flex items-center justify-center"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={22} />
                         </button>
                       </div>
 
@@ -568,7 +572,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                           <select
                             value={item.mainCategory}
                             onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
-                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
+                            className="w-full p-3 bg-surface border-none rounded-xl shadow-inner text-md font-bold outline-none"
                           >
                             {Object.keys(expenseCategories).map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
@@ -581,7 +585,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                           <select
                             value={item.subCategory}
                             onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
-                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
+                            className="w-full p-3 bg-surface border-none rounded-xl shadow-inner text-md font-bold outline-none"
                           >
                             {subs.map(sub => (
                               <option key={sub} value={sub}>{sub}</option>
