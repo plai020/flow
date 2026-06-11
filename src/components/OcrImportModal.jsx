@@ -28,7 +28,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
     storeType: '全聯',
     date: new Date().toISOString().split('T')[0],
     branch: '',
-    items: [], // { id, name, amount, note, mainCategory, subCategory, payment, checked }
+    payment: 'pi錢包',
+    items: [], // { id, name, amount, note, mainCategory, subCategory, checked }
     total: 0
   });
 
@@ -81,9 +82,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
             name: item.name || '',
             amount: Number(item.amount) || 0,
             note: item.note || '',
-            mainCategory: '餐飲',
+            mainCategory: '飲食',
             subCategory: '食材',
-            payment: 'pi錢包',
             checked: true
           });
         });
@@ -97,9 +97,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
             name: disc.name || '折扣項目',
             amount: Number(disc.amount) || 0,
             note: '折扣優惠',
-            mainCategory: '餐飲',
+            mainCategory: '飲食',
             subCategory: '食材',
-            payment: 'pi錢包',
             checked: true
           });
         });
@@ -114,6 +113,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
         storeType: finalStoreType,
         date: result.date || new Date().toISOString().split('T')[0],
         branch: branchName || (branches[0] || ''),
+        payment: 'pi錢包',
         items: parsedItems,
         total: Number(result.total) || 0
       });
@@ -142,9 +142,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
           name: '',
           amount: 0,
           note: '',
-          mainCategory: '餐飲',
+          mainCategory: '飲食',
           subCategory: '食材',
-          payment: 'pi錢包',
           checked: true
         }
       ],
@@ -179,9 +178,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
           name: '',
           amount: 0,
           note: '',
-          mainCategory: '餐飲',
+          mainCategory: '飲食',
           subCategory: '食材',
-          payment: 'pi錢包',
           checked: true
         }
       ]
@@ -266,7 +264,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
         mainStore: receiptData.storeType,
         branch: receiptData.branch,
         item: item.name || '未命名項目',
-        payment: item.payment,
+        payment: receiptData.payment,
         note: item.note || ''
       });
     });
@@ -473,6 +471,21 @@ export default function OcrImportModal({ isOpen, onClose }) {
                   </select>
                 )}
               </div>
+
+              {/* Global Payment Method */}
+              <div className="flex flex-col gap-1 border-t border-gray-100 pt-3">
+                <label className="text-sm font-bold text-muted">支付方式</label>
+                <select
+                  value={receiptData.payment}
+                  onChange={e => setReceiptData(prev => ({ ...prev, payment: e.target.value }))}
+                  className="w-full p-4 bg-surface border-none rounded-xl shadow-inner font-bold text-md outline-none"
+                  style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                >
+                  {payments.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Items List Table */}
@@ -548,10 +561,10 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         </div>
                       </div>
 
-                      {/* Dropdowns for category & payment */}
-                      <div className="grid-3 gap-2">
+                      {/* Dropdowns for category */}
+                      <div className="flex gap-2">
                         {/* Main Category */}
-                        <div className="flex flex-col gap-1">
+                        <div className="flex-1 flex flex-col gap-1">
                           <select
                             value={item.mainCategory}
                             onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
@@ -564,7 +577,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         </div>
 
                         {/* Sub Category */}
-                        <div className="flex flex-col gap-1">
+                        <div className="flex-1 flex flex-col gap-1">
                           <select
                             value={item.subCategory}
                             onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
@@ -572,19 +585,6 @@ export default function OcrImportModal({ isOpen, onClose }) {
                           >
                             {subs.map(sub => (
                               <option key={sub} value={sub}>{sub}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Payment */}
-                        <div className="flex flex-col gap-1">
-                          <select
-                            value={item.payment}
-                            onChange={e => updateItemField(item.id, 'payment', e.target.value)}
-                            className="w-full p-2 bg-surface border-none rounded-xl shadow-inner text-xs font-bold outline-none"
-                          >
-                            {payments.map(p => (
-                              <option key={p} value={p}>{p}</option>
                             ))}
                           </select>
                         </div>

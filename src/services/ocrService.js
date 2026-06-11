@@ -86,17 +86,40 @@ export async function recognizeReceipt(file, storeType = 'auto', apiKey) {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_VERSION });
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType, data: base64 } }
-        ]
-      }],
-      generationConfig: { temperature: 0.1, topP: 0.95 }
-    });
+    let attempts = 0;
+    const maxRetries = 3;
+    let result;
+
+    while (attempts <= maxRetries) {
+      try {
+        result = await model.generateContent({
+          contents: [{
+            role: 'user',
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType, data: base64 } }
+            ]
+          }],
+          generationConfig: { temperature: 0.1, topP: 0.95 }
+        });
+        break;
+      } catch (err) {
+        if (err.message && err.message.includes('503')) {
+          attempts++;
+          if (attempts > maxRetries) {
+            throw new Error('服務暫時無法使用 (503)，已自動重試 3 次仍失敗，請稍後再試。');
+          }
+          // Exponential backoff roughly between 1~3s
+          const waitTime = Math.min(Math.pow(2, attempts - 1) * 1000 + Math.random() * 500, 3000);
+          console.warn(`Encountered 503 error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempts} of ${maxRetries})`);
+          await sleep(waitTime);
+        } else {
+          throw err; // Re-throw other errors immediately
+        }
+      }
+    }
 
     const response = await result.response;
     const rawText = response.text();
