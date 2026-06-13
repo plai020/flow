@@ -409,16 +409,45 @@ export default function OcrImportModal({ isOpen, onClose }) {
         {step === 2 && (
           <div className="p-4 flex flex-col gap-5">
             {/* Header info */}
-            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-[20px]">
-              {/* Store & Date row */}
-              <div className="flex gap-4">
+            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col">
+              {/* Row 1: Date & Payment */}
+              <div className="flex justify-between gap-4 mb-4">
+                {/* Date */}
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-[16px] font-[600] text-[#333]">日期</label>
+                  <input
+                    type="date"
+                    value={receiptData.date}
+                    onChange={e => setReceiptData(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                  />
+                </div>
+                {/* Payment */}
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-[16px] font-[600] text-[#333]">支付方式</label>
+                  <select
+                    value={receiptData.payment}
+                    onChange={e => setReceiptData(prev => ({ ...prev, payment: e.target.value }))}
+                    className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                  >
+                    {payments.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Store & Branch */}
+              <div className="flex justify-between gap-4">
+                {/* Store */}
                 <div className="flex-1 flex flex-col gap-1">
                   <div className="flex justify-between items-center">
                     <label className="text-[16px] font-[600] text-[#333]">商店</label>
                     <button 
                       type="button" 
                       onClick={() => setIsCustomStore(!isCustomStore)}
-                      className="text-[14px] font-[600] text-primary flex items-center gap-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
+                      className="text-[14px] font-[600] text-[#333] flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
                     >
                       <Edit3 size={14} /> {isCustomStore ? '選擇現有' : '手動輸入'}
                     </button>
@@ -429,13 +458,13 @@ export default function OcrImportModal({ isOpen, onClose }) {
                       placeholder="輸入商店名稱"
                       value={receiptData.storeType}
                       onChange={e => setReceiptData(prev => ({ ...prev, storeType: e.target.value }))}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none h-[46px]"
+                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
                     />
                   ) : (
                     <select
                       value={receiptData.storeType}
                       onChange={e => handleStoreTypeChange(e.target.value)}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none h-[46px]"
+                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
                       style={{ appearance: 'none', WebkitAppearance: 'none' }}
                     >
                       <option value="">請選擇商店</option>
@@ -446,66 +475,40 @@ export default function OcrImportModal({ isOpen, onClose }) {
                   )}
                 </div>
 
+                {/* Branch */}
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-[16px] font-[600] text-[#333]">日期</label>
-                  <input
-                    type="date"
-                    value={receiptData.date}
-                    onChange={e => setReceiptData(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none h-[46px]"
-                  />
+                  <div className="flex justify-between items-center">
+                    <label className="text-[16px] font-[600] text-[#333]">分店名稱</label>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsCustomBranch(!isCustomBranch)}
+                      className="text-[14px] font-[600] text-[#333] flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
+                    >
+                      <Edit3 size={14} /> {isCustomBranch ? '選擇現有' : '手動輸入'}
+                    </button>
+                  </div>
+                  {isCustomBranch ? (
+                    <input
+                      type="text"
+                      placeholder="輸入分店名稱"
+                      value={receiptData.branch}
+                      onChange={e => handleBranchChange(e.target.value)}
+                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                    />
+                  ) : (
+                    <select
+                      value={receiptData.branch}
+                      onChange={e => handleBranchChange(e.target.value)}
+                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                      style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                    >
+                      <option value="">請選擇分店</option>
+                      {(storeBranches[receiptData.storeType] || []).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-              </div>
-
-              {/* Branch Selector & Overwrite */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-[16px] font-[600] text-[#333]">分店名稱</label>
-                  <button 
-                    type="button" 
-                    onClick={() => setIsCustomBranch(!isCustomBranch)}
-                    className="text-[14px] font-[600] text-primary flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
-                  >
-                    <Edit3 size={14} /> {isCustomBranch ? '選擇現有分店' : '手動填寫分店'}
-                  </button>
-                </div>
-
-                {isCustomBranch ? (
-                  <input
-                    type="text"
-                    placeholder="請輸入分店名稱 (如：信義店)"
-                    value={receiptData.branch}
-                    onChange={e => handleBranchChange(e.target.value)}
-                    className="w-full p-4 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none"
-                  />
-                ) : (
-                  <select
-                    value={receiptData.branch}
-                    onChange={e => handleBranchChange(e.target.value)}
-                    className="w-full p-4 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none"
-                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
-                  >
-                    <option value="">請選擇分店</option>
-                    {(storeBranches[receiptData.storeType] || []).map(b => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {/* Global Payment Method */}
-              <div className="flex flex-col gap-1 border-t border-[#eee] pt-4">
-                <label className="text-[16px] font-[600] text-[#333]">支付方式</label>
-                <select
-                  value={receiptData.payment}
-                  onChange={e => setReceiptData(prev => ({ ...prev, payment: e.target.value }))}
-                  className="w-full p-4 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none"
-                  style={{ appearance: 'none', WebkitAppearance: 'none' }}
-                >
-                  {payments.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -572,7 +575,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                             placeholder="品名"
                             value={item.name}
                             onChange={e => updateItemField(item.id, 'name', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none"
+                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
                           />
                         </div>
                         <div className="flex-[2] flex flex-col gap-1">
@@ -581,7 +584,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                             placeholder="金額"
                             value={item.amount || ''}
                             onChange={e => updateItemField(item.id, 'amount', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[15px] outline-none text-right"
+                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none text-right h-[50px]"
                           />
                         </div>
                       </div>
@@ -593,7 +596,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                           <select
                             value={item.mainCategory}
                             onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[15px] font-bold outline-none min-h-[40px]"
+                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-bold outline-none h-[50px]"
                           >
                             {Object.keys(expenseCategories).map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
@@ -606,7 +609,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                           <select
                             value={item.subCategory}
                             onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[15px] font-bold outline-none min-h-[40px]"
+                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-bold outline-none h-[50px]"
                           >
                             {subs.map(sub => (
                               <option key={sub} value={sub}>{sub}</option>
@@ -621,7 +624,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         placeholder="備註資訊 (非必填)"
                         value={item.note}
                         onChange={e => updateItemField(item.id, 'note', e.target.value)}
-                        className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[15px] font-normal outline-none"
+                        className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-normal outline-none h-[50px]"
                       />
                     </div>
                   );
