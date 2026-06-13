@@ -52,13 +52,28 @@ const CARREFOUR_PROMPT = `請分析這張家樂福（Carrefour）的行動支付
 4. discounts：固定回傳空陣列（$0 優惠折扣忽略）
 5. total：「消費金額」欄位數字（去除 $ 符號）`;
 
-const AUTO_PROMPT = `請分析這張行動支付購物記錄截圖（可能是全聯 PX Mart 或家樂福 Carrefour），先判斷商店類型，再嚴格以純 JSON 回傳（禁止輸出 markdown、code block 或說明文字，只輸出一個 JSON 物件）。
+const CLOUD_PROMPT = `請分析這張雲端發票（電子發票明細）的手機畫面截圖，嚴格以純 JSON 格式回傳下列結構（禁止輸出 markdown、code block、說明文字，只輸出一個 JSON 物件）：
+{"storeType":"商店名稱","date":"YYYY-MM-DD","branch":"","items":[{"name":"物品名稱","amount":數字,"note":""}],"discounts":[],"total":數字}
+
+解析規則：
+1. storeType：頁面頂部的商店名稱（例如「台灣屈臣氏個人用品商店股份有限公司永貞分公司」）
+2. date：發票的交易日期（例如「2026/05/20」），格式轉為 YYYY-MM-DD
+3. branch：固定回傳空字串 ""
+4. items：消費明細列表。每一筆包含名稱 and 金額。
+   - 金額為 0 的品項必須過濾掉，不需填入。
+   - 如果品項數量為 2 以上，請在 note 填寫 "N個"（例如：數量為 2 則填 "2個"），否則 note 填 ""。
+5. discounts：固定回傳空陣列 []
+6. total：發票中的合計金額（例如：「合計 $433 元」對應的 433）`;
+
+const AUTO_PROMPT = `請分析這張行動支付購物記錄或雲端發票截圖（可能是全聯 PX Mart、家樂福 Carrefour 或 雲端發票），先判斷商店類型，再嚴格以純 JSON 回傳（禁止輸出 markdown、code block 或說明文字，只輸出一個 JSON 物件）。
 
 全聯格式：{"storeType":"全聯","date":"YYYY-MM-DD","branch":"前4中文字","items":[{"name":"品名","amount":數字,"note":""}],"discounts":[{"name":"折扣名","amount":負數字}],"total":數字}
 家樂福格式：{"storeType":"家樂福","date":"YYYY-MM-DD","branch":"前4中文字（從第一個中文字起）","items":[{"name":"品名","amount":數字,"note":""}],"discounts":[],"total":數字}
+雲端發票格式：{"storeType":"商店名稱","date":"YYYY-MM-DD","branch":"","items":[{"name":"品名","amount":數字,"note":""}],"discounts":[],"total":數字}
 
 全聯規則：branch 從頂部標題前 4 中文字；date 從「交易日期」；items 從「消費明細」金額 0 跳過，數量≥2 note 填"N個"；discounts 從「優惠活動折扣金額」填負值，保留完整名稱；total 從「消費金額」。
-家樂福規則：branch 從頂部標題第一個中文字起取 4 字；date 從上方日期框；items 從「消費列表」每行獨立不合併，金額 0 跳過，數量≥2 note 填"N個"；discounts 固定[]；total 從「消費金額」。`;
+家樂福規則：branch 從頂部標題第一個中文字起取 4 字；date 從上方日期框；items 從「消費列表」每行獨立不合併，金額 0 跳過，數量≥2 note 填"N個"；discounts 固定[]；total 從「消費金額」。
+雲端發票規則：storeType 為頂部大標題的完整商店名稱；date 為發票交易日期；branch 固定回傳空字串 ""；items 中金額 0 跳過，數量≥2 則 note 填 "N個"；discounts 固定[]；total 為合計金額。`;
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -69,7 +84,7 @@ export const GEMINI_MODEL_VERSION = "gemini-3.5-flash";
 // ── 主辨識函式 ────────────────────────────────────────────────────
 /**
  * @param {File} file         - 圖片檔案
- * @param {string} storeType  - 'auto' | '全聯' | '家樂福'
+ * @param {string} storeType  - 'auto' | '全聯' | '家樂福' | '雲端發票'
  * @param {string} apiKey     - Gemini API Key
  * @returns {Promise<object>} - 解析後的 JSON 物件
  */
@@ -81,6 +96,7 @@ export async function recognizeReceipt(file, storeType = 'auto', apiKey) {
   const prompt =
     storeType === '全聯' ? PX_PROMPT :
     storeType === '家樂福' ? CARREFOUR_PROMPT :
+    storeType === '雲端發票' ? CLOUD_PROMPT :
     AUTO_PROMPT;
 
   try {

@@ -74,26 +74,31 @@ export default function OcrImportModal({ isOpen, onClose }) {
       const result = await recognizeReceipt(selectedFile, storeType, apiKey);
       
       // Map result to our Form state structure
-      const finalStoreType = result.storeType === '家樂福' ? '家樂福' : '全聯';
+      const isPx = result.storeType === '全聯';
+      const isCarrefour = result.storeType === '家樂福';
+      const isCloud = !isPx && !isCarrefour;
+      const finalStoreType = result.storeType || '';
+      
       const parsedItems = [];
 
       // Combine regular items
       if (Array.isArray(result.items)) {
         result.items.forEach((item, idx) => {
+          if (isCloud && Number(item.amount) === 0) return;
           parsedItems.push({
             id: `item-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
             name: item.name || '',
             amount: Number(item.amount) || 0,
             note: item.note || '',
-            mainCategory: '飲食',
-            subCategory: '食材',
+            mainCategory: isCloud ? '' : '飲食',
+            subCategory: isCloud ? '' : '食材',
             checked: true
           });
         });
       }
 
       // Append discount items as negative numbers if PX mart
-      if (finalStoreType === '全聯' && Array.isArray(result.discounts)) {
+      if (isPx && Array.isArray(result.discounts)) {
         result.discounts.forEach((disc, idx) => {
           parsedItems.push({
             id: `disc-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
@@ -109,19 +114,20 @@ export default function OcrImportModal({ isOpen, onClose }) {
 
       // Check if branch name is in storeBranches
       const branches = storeBranches[finalStoreType] || [];
-      const branchName = (result.branch || '').trim();
-      const hasBranch = branches.includes(branchName);
+      const branchName = isCloud ? '' : (result.branch || '').trim();
+      const hasBranch = isCloud ? false : branches.includes(branchName);
 
       setReceiptData({
         storeType: finalStoreType,
         date: result.date || new Date().toISOString().split('T')[0],
-        branch: branchName || (branches[0] || ''),
-        payment: 'pi錢包',
+        branch: branchName,
+        payment: isCloud ? '' : 'pi錢包',
         items: parsedItems,
         total: Number(result.total) || 0
       });
 
-      setIsCustomBranch(!hasBranch && branchName.length > 0);
+      setIsCustomBranch(isCloud ? true : (!hasBranch && branchName.length > 0));
+      setIsCustomStore(isCloud);
       setStep(2);
     } catch (err) {
       console.error(err);
@@ -308,15 +314,15 @@ export default function OcrImportModal({ isOpen, onClose }) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-surface pb-24">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-surface pb-24">
         {/* STEP 1: Upload receipt photo / configure ocr */}
         {step === 1 && (
           <div className="p-6 flex flex-col gap-6">
             {/* Store selector */}
             <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4">
               <span className="font-bold text-lg text-muted">1. 選擇收據商店類型</span>
-              <div className="flex gap-3">
-                {['auto', '全聯', '家樂福'].map(t => (
+              <div className="flex gap-3 flex-wrap">
+                {['auto', '全聯', '家樂福', '雲端發票'].map(t => (
                   <button
                     key={t}
                     type="button"
@@ -353,7 +359,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                     <Upload size={32} className="text-[#333333]" />
                   </div>
                   <span className="font-bold text-lg">拍攝或選擇收據截圖</span>
-                  <span className="text-sm text-muted text-center">支援全聯 PX Pay / 家樂福錢包之消費明細截圖</span>
+                  <span className="text-sm text-muted text-center">支援全聯 PX Pay / 家樂福錢包 / 雲端發票之消費明細截圖</span>
                 </div>
               )}
             </label>
@@ -407,7 +413,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
 
         {/* STEP 2: Edit items & Preview */}
         {step === 2 && (
-          <div className="p-4 flex flex-col gap-5">
+          <div className="p-4 flex flex-col gap-5 overflow-x-hidden">
             {/* Header info */}
             <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4 w-full">
               {/* Row 1: Date & Payment */}
@@ -431,6 +437,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                     className="uniform-input w-full"
                     style={{ appearance: 'none', WebkitAppearance: 'none' }}
                   >
+                    <option value="">請選擇支付</option>
                     {payments.map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
@@ -442,14 +449,14 @@ export default function OcrImportModal({ isOpen, onClose }) {
               <div className="flex justify-between w-full" style={{ width: '100%' }}>
                 {/* Store */}
                 <div className="flex flex-col gap-1" style={{ width: '48%' }}>
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex justify-between items-center mb-1 flex-wrap gap-1">
                     <label className="text-[16px] font-[600] text-[#333]">商店</label>
                     <button 
                       type="button" 
                       onClick={() => setIsCustomStore(!isCustomStore)}
-                      className="text-[14px] font-[600] text-[#333] flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
+                      className="text-[12px] font-[600] text-[#333] flex items-center gap-0.5 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
                     >
-                      <Edit3 size={14} className="text-[#333333]" /> {isCustomStore ? '選擇現有' : '手動輸入'}
+                      <Edit3 size={12} className="text-[#333333]" /> {isCustomStore ? '選擇' : '自訂'}
                     </button>
                   </div>
                   {isCustomStore ? (
@@ -477,14 +484,14 @@ export default function OcrImportModal({ isOpen, onClose }) {
 
                 {/* Branch */}
                 <div className="flex flex-col gap-1" style={{ width: '48%' }}>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-[16px] font-[600] text-[#333]">分店名稱</label>
+                  <div className="flex justify-between items-center mb-1 flex-wrap gap-1">
+                    <label className="text-[16px] font-[600] text-[#333]">分店</label>
                     <button 
                       type="button" 
                       onClick={() => setIsCustomBranch(!isCustomBranch)}
-                      className="text-[14px] font-[600] text-[#333] flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
+                      className="text-[12px] font-[600] text-[#333] flex items-center gap-0.5 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
                     >
-                      <Edit3 size={14} /> {isCustomBranch ? '選擇現有' : '手動輸入'}
+                      <Edit3 size={12} /> {isCustomBranch ? '選擇' : '自訂'}
                     </button>
                   </div>
                   {isCustomBranch ? (
@@ -541,7 +548,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                     <div 
                       key={item.id} 
                       className={`p-4 rounded-xl border border-gray-100 flex flex-col gap-3 transition-colors ${item.checked ? 'bg-white' : 'bg-gray-50 opacity-60'}`}
-                      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', overflowX: 'hidden' }}
                     >
                       {/* Top Checkbox & Delete */}
                       <div className="flex justify-between items-center gap-2">
@@ -567,37 +574,38 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         </button>
                       </div>
 
-                      {/* Name & Amount inputs */}
-                      <div className="flex gap-3">
-                        <div className="flex-[3] flex flex-col gap-1">
+                      {/* Name & Amount inputs - 65% and 30% width */}
+                      <div className="flex justify-between w-full" style={{ width: '100%' }}>
+                        <div style={{ width: '65%' }}>
                           <input
                             type="text"
                             placeholder="品名"
                             value={item.name}
                             onChange={e => updateItemField(item.id, 'name', e.target.value)}
-                            className="uniform-input"
+                            className="uniform-input w-full"
                           />
                         </div>
-                        <div className="flex-[2] flex flex-col gap-1">
+                        <div style={{ width: '30%' }}>
                           <input
                             type="number"
                             placeholder="金額"
                             value={item.amount || ''}
                             onChange={e => updateItemField(item.id, 'amount', e.target.value)}
-                            className="uniform-input"
+                            className="uniform-input w-full"
                           />
                         </div>
                       </div>
 
-                      {/* Dropdowns for category */}
-                      <div className="flex justify-between w-full" style={{ width: '100%' }}>
+                      {/* Dropdowns for category - stacked vertically, full width */}
+                      <div className="flex flex-col gap-3 w-full">
                         {/* Main Category */}
-                        <div className="flex flex-col gap-1" style={{ width: '48%' }}>
+                        <div className="flex flex-col gap-1 w-full">
                           <select
                             value={item.mainCategory}
                             onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
                             className="uniform-input w-full"
                           >
+                            <option value="">請選擇主分類</option>
                             {Object.keys(expenseCategories).map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
                             ))}
@@ -605,12 +613,13 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         </div>
 
                         {/* Sub Category */}
-                        <div className="flex flex-col gap-1" style={{ width: '48%' }}>
+                        <div className="flex flex-col gap-1 w-full">
                           <select
                             value={item.subCategory}
                             onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
                             className="uniform-input w-full"
                           >
+                            <option value="">請選擇子分類</option>
                             {subs.map(sub => (
                               <option key={sub} value={sub}>{sub}</option>
                             ))}
