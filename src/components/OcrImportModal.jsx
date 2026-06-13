@@ -302,8 +302,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
           {step === 2 && '預覽與核對明細'}
           {step === 3 && '匯入完成'}
         </h2>
-        <button onClick={onClose} className="btn-3d w-10 h-10 p-0 bg-white">
-          <X size={20} />
+                <button onClick={onClose} className="uniform-button">
+          <X size={20} className="text-[#333333]" />
         </button>
       </div>
 
@@ -321,7 +321,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                     key={t}
                     type="button"
                     onClick={() => setStoreType(t)}
-                    className={`btn-3d flex-1 py-3 text-md ${storeType === t ? 'btn-3d-primary text-black' : 'bg-surface text-muted'}`}
+                    className={`uniform-button ${storeType === t ? 'active' : ''}`}
                   >
                     {t === 'auto' ? '自動偵測' : t}
                   </button>
@@ -350,7 +350,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
               ) : (
                 <div className="flex flex-col items-center gap-3 py-6">
                   <div className="w-16 h-16 rounded-full bg-yellow-50 flex items-center justify-center text-primary">
-                    <Upload size={32} />
+                    <Upload size={32} className="text-[#333333]" />
                   </div>
                   <span className="font-bold text-lg">拍攝或選擇收據截圖</span>
                   <span className="text-sm text-muted text-center">支援全聯 PX Pay / 家樂福錢包之消費明細截圖</span>
@@ -380,12 +380,12 @@ export default function OcrImportModal({ isOpen, onClose }) {
                 type="button"
                 onClick={handleStartOcr}
                 disabled={loading || !selectedFile}
-                className="btn-3d btn-3d-primary w-full py-4 text-xl font-bold flex items-center justify-center gap-2"
+                className="uniform-button uniform-button-primary w-full py-4 text-xl font-bold flex items-center justify-center gap-2"
                 style={{ opacity: (!selectedFile || loading) ? 0.6 : 1 }}
               >
                 {loading ? (
                   <>
-                    <RefreshCw size={24} className="animate-spin" />
+                    <RefreshCw size={24} className="animate-spin text-[#333333]" />
                     正在分析明細...
                   </>
                 ) : (
@@ -397,7 +397,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                 type="button"
                 onClick={enterManualMode}
                 disabled={loading}
-                className="btn-3d w-full py-4 text-lg font-bold bg-white text-muted"
+                className="uniform-button w-full py-4 text-lg font-bold bg-white text-muted"
               >
                 手動空白輸入模式
               </button>
@@ -409,26 +409,26 @@ export default function OcrImportModal({ isOpen, onClose }) {
         {step === 2 && (
           <div className="p-4 flex flex-col gap-5">
             {/* Header info */}
-            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col">
+            <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4 w-full">
               {/* Row 1: Date & Payment */}
-              <div className="flex justify-between gap-4 mb-4">
+              <div className="flex justify-between w-full" style={{ width: '100%' }}>
                 {/* Date */}
-                <div className="flex-1 flex flex-col gap-1">
+                <div className="flex flex-col gap-1" style={{ width: '48%' }}>
                   <label className="text-[16px] font-[600] text-[#333]">日期</label>
                   <input
                     type="date"
                     value={receiptData.date}
                     onChange={e => setReceiptData(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                    className="uniform-input w-full"
                   />
                 </div>
                 {/* Payment */}
-                <div className="flex-1 flex flex-col gap-1">
+                <div className="flex flex-col gap-1" style={{ width: '48%' }}>
                   <label className="text-[16px] font-[600] text-[#333]">支付方式</label>
                   <select
                     value={receiptData.payment}
                     onChange={e => setReceiptData(prev => ({ ...prev, payment: e.target.value }))}
-                    className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                    className="uniform-input w-full"
                     style={{ appearance: 'none', WebkitAppearance: 'none' }}
                   >
                     {payments.map(p => (
@@ -439,17 +439,17 @@ export default function OcrImportModal({ isOpen, onClose }) {
               </div>
 
               {/* Row 2: Store & Branch */}
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between w-full" style={{ width: '100%' }}>
                 {/* Store */}
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-1" style={{ width: '48%' }}>
+                  <div className="flex justify-between items-center mb-1">
                     <label className="text-[16px] font-[600] text-[#333]">商店</label>
                     <button 
                       type="button" 
                       onClick={() => setIsCustomStore(!isCustomStore)}
                       className="text-[14px] font-[600] text-[#333] flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-[12px]"
                     >
-                      <Edit3 size={14} /> {isCustomStore ? '選擇現有' : '手動輸入'}
+                      <Edit3 size={14} className="text-[#333333]" /> {isCustomStore ? '選擇現有' : '手動輸入'}
                     </button>
                   </div>
                   {isCustomStore ? (
@@ -458,13 +458,13 @@ export default function OcrImportModal({ isOpen, onClose }) {
                       placeholder="輸入商店名稱"
                       value={receiptData.storeType}
                       onChange={e => setReceiptData(prev => ({ ...prev, storeType: e.target.value }))}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                      className="uniform-input w-full"
                     />
                   ) : (
                     <select
                       value={receiptData.storeType}
                       onChange={e => handleStoreTypeChange(e.target.value)}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                      className="uniform-input w-full"
                       style={{ appearance: 'none', WebkitAppearance: 'none' }}
                     >
                       <option value="">請選擇商店</option>
@@ -476,8 +476,8 @@ export default function OcrImportModal({ isOpen, onClose }) {
                 </div>
 
                 {/* Branch */}
-                <div className="flex-1 flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-1" style={{ width: '48%' }}>
+                  <div className="flex justify-between items-center mb-1">
                     <label className="text-[16px] font-[600] text-[#333]">分店名稱</label>
                     <button 
                       type="button" 
@@ -493,13 +493,13 @@ export default function OcrImportModal({ isOpen, onClose }) {
                       placeholder="輸入分店名稱"
                       value={receiptData.branch}
                       onChange={e => handleBranchChange(e.target.value)}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                      className="uniform-input w-full"
                     />
                   ) : (
                     <select
                       value={receiptData.branch}
                       onChange={e => handleBranchChange(e.target.value)}
-                      className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                      className="uniform-input w-full"
                       style={{ appearance: 'none', WebkitAppearance: 'none' }}
                     >
                       <option value="">請選擇分店</option>
@@ -561,9 +561,9 @@ export default function OcrImportModal({ isOpen, onClose }) {
                               handleRemoveItem(item.id);
                             }
                           }}
-                          className="text-red-400 hover:text-expense p-3 -mr-2 rounded-xl btn-3d bg-white flex items-center justify-center"
+                          className="uniform-button"
                         >
-                          <Trash2 size={22} />
+                          <Trash2 size={22} className="text-[#333333]" />
                         </button>
                       </div>
 
@@ -575,7 +575,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                             placeholder="品名"
                             value={item.name}
                             onChange={e => updateItemField(item.id, 'name', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none h-[50px]"
+                            className="uniform-input"
                           />
                         </div>
                         <div className="flex-[2] flex flex-col gap-1">
@@ -584,19 +584,19 @@ export default function OcrImportModal({ isOpen, onClose }) {
                             placeholder="金額"
                             value={item.amount || ''}
                             onChange={e => updateItemField(item.id, 'amount', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner font-bold text-[16px] text-[#333] outline-none text-right h-[50px]"
+                            className="uniform-input"
                           />
                         </div>
                       </div>
 
                       {/* Dropdowns for category */}
-                      <div className="flex gap-2">
+                      <div className="flex justify-between w-full" style={{ width: '100%' }}>
                         {/* Main Category */}
-                        <div className="flex-1 flex flex-col gap-1">
+                        <div className="flex flex-col gap-1" style={{ width: '48%' }}>
                           <select
                             value={item.mainCategory}
                             onChange={e => updateItemField(item.id, 'mainCategory', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-bold outline-none h-[50px]"
+                            className="uniform-input w-full"
                           >
                             {Object.keys(expenseCategories).map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
@@ -605,11 +605,11 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         </div>
 
                         {/* Sub Category */}
-                        <div className="flex-1 flex flex-col gap-1">
+                        <div className="flex flex-col gap-1" style={{ width: '48%' }}>
                           <select
                             value={item.subCategory}
                             onChange={e => updateItemField(item.id, 'subCategory', e.target.value)}
-                            className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-bold outline-none h-[50px]"
+                            className="uniform-input w-full"
                           >
                             {subs.map(sub => (
                               <option key={sub} value={sub}>{sub}</option>
@@ -624,7 +624,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
                         placeholder="備註資訊 (非必填)"
                         value={item.note}
                         onChange={e => updateItemField(item.id, 'note', e.target.value)}
-                        className="w-full p-3 bg-surface border border-[#eee] rounded-xl shadow-inner text-[16px] text-[#333] font-normal outline-none h-[50px]"
+                        className="uniform-input"
                       />
                     </div>
                   );
@@ -635,9 +635,9 @@ export default function OcrImportModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={handleAddField}
-                className="mt-3 btn-3d py-3 bg-surface border border-dashed border-gray-300 font-bold text-sm text-primary flex items-center justify-center gap-1"
+                className="mt-3 uniform-button py-3 bg-surface border border-dashed border-gray-300 font-bold text-sm text-primary flex items-center justify-center gap-1"
               >
-                <Plus size={16} /> 新增明細欄位
+                <Plus size={16} className="text-[#333333]" /> 新增明細欄位
               </button>
             </div>
 
@@ -676,7 +676,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={handleImport}
-                className="btn-3d btn-3d-primary flex-2 py-4 text-xl font-bold"
+                className="uniform-button uniform-button-primary flex-2 py-4 text-xl font-bold"
               >
                 確認並匯入明細
               </button>
@@ -702,7 +702,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={handleReset}
-                className="btn-3d btn-3d-primary w-full py-4 text-lg font-bold"
+                className="uniform-button uniform-button-primary w-full py-4 text-lg font-bold"
               >
                 繼續掃描下一張
               </button>
@@ -710,7 +710,7 @@ export default function OcrImportModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="btn-3d w-full py-4 text-lg font-bold bg-white text-muted"
+                className="uniform-button w-full py-4 text-lg font-bold bg-white text-muted"
               >
                 關閉控制台
               </button>

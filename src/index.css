@@ -327,3 +327,88 @@ body {
   animation: spin 1s linear infinite;
 }
 
+.uniform-input, .uniform-select, select.uniform-input, select {
+  height: 50px !important;
+  border-radius: 12px !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 700 !important;
+  padding: 12px 16px !important;
+  background-color: #F5F5F5 !important;
+  border: 1px solid #DDD !important;
+  color: #333333 !important;
+  outline: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.uniform-button {
+  height: 50px !important;
+  border-radius: 12px !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 700 !important;
+  padding: 12px 16px !important;
+  background-color: #F5F5F5;
+  border: 1px solid #DDD;
+  color: #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none !important;
+}
+
+.uniform-button:focus, .uniform-input:focus, select:focus, input:focus {
+  border-color: #999 !important;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.05) !important;
+  outline: none !important;
+}
+
+.uniform-button.active {
+  background-color: #FFF9C4 !important; /* highlight yellow */
+  border-color: #F9D923 !important;
+  color: #333333 !important;
+}
+
+.uniform-button-primary {
+  background-color: #FFF9C4 !important; /* highlight */
+  border-color: #F9D923 !important;
+  color: #333333 !important;
+}
+
+.text-primary {
+  color: #333333 !important;
+}
+
+/* Grayscale filter for native date calendar indicator to remove blue tint */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: grayscale(1) contrast(1.5);
+  cursor: pointer;
+}
+
+/* Option styling to prevent blue styling */
+select option {
+  color: #333333 !important;
+  background-color: #ffffff !important;
+}
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 2%;
+  gap: 0;
+}
+
+.field-col {
+  flex: 0 0 48%;
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    flex-direction: column;
+    margin: 0;
+  }
+  .field-col {
+    flex: 0 0 100%;
+    margin-bottom: 8px;
+  }
+}
