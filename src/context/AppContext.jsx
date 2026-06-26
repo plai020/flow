@@ -135,9 +135,7 @@ export const AppProvider = ({ children }) => {
         id: String(cloudTx.id || cloudTx.ID || ''),
         date: normalizeDate(cloudTx.date || cloudTx['日期'] || ''),
         // Prioritize Chinese type if present, fallback to English
-        type: cloudTx['類型'] === '支出' || cloudTx.type === 'expense'
-          ? 'expense'
-          : cloudTx['類型'] === '收入' || cloudTx.type === 'income'
+        type: (cloudTx['類型'] === '收入' || cloudTx.type === '收入' || cloudTx['類型'] === 'income' || cloudTx.type === 'income')
           ? 'income'
           : 'expense',
         mainCategory: cloudTx.mainCategory || cloudTx['主分類'] || '',

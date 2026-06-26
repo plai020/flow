@@ -84,6 +84,11 @@ export default function ManualAddModal({ isOpen, onClose, initialDate, editData 
   if (!isOpen) return null;
 
   const handleConfirm = (finalAmount) => {
+    if (!mainCategory || !subCategory || !mainStore || !branch || !item || !payment) {
+      alert('請填寫完整資訊：主分類、子分類、商店、分店、物品、支付均為必填');
+      return;
+    }
+
     if (editData) {
       updateTransaction({ id: editData.id, type, date, mainCategory, subCategory, mainStore, branch, item, amount: finalAmount, payment, note });
     } else {

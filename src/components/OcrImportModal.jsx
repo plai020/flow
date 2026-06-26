@@ -250,6 +250,16 @@ export default function OcrImportModal({ isOpen, onClose }) {
       return;
     }
 
+    if (!receiptData.storeType || !receiptData.branch || !receiptData.payment) {
+      alert('請填寫完整資訊：商店、分店、支付均為必填');
+      return;
+    }
+    const hasIncompleteItems = itemsToImport.some(item => !item.name || !item.mainCategory || !item.subCategory);
+    if (hasIncompleteItems) {
+      alert('請填寫完整資訊：品名(物品)、主分類、子分類均為必填');
+      return;
+    }
+
     // Dynamic addition of new branch if it is customized and not already stored
     const store = receiptData.storeType;
     const currentBranch = receiptData.branch.trim();
@@ -321,13 +331,14 @@ export default function OcrImportModal({ isOpen, onClose }) {
             {/* Store selector */}
             <div className="btn-3d p-5 bg-white rounded-2xl flex flex-col gap-4">
               <span className="font-bold text-lg text-muted">1. 選擇收據商店類型</span>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
                 {['auto', '全聯', '家樂福', '雲端發票'].map(t => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setStoreType(t)}
                     className={`uniform-button ${storeType === t ? 'active' : ''}`}
+                    style={{ flex: '1', padding: '12px 8px', fontSize: '15px', minWidth: '70px' }}
                   >
                     {t === 'auto' ? '自動偵測' : t}
                   </button>
