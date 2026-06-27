@@ -3,7 +3,8 @@ import {
   Utensils, Bus, ShoppingBag, Home, Film, DollarSign, TrendingUp, HelpCircle, 
   Smartphone, Coffee, Car, Plane, Heart, Star, Pizza, Gift
 } from 'lucide-react';
-import { getSheetsUrl, saveSheetsUrl, fetchCloudData, postCloudTransaction } from '../services/googleSheets';
+import { getSheetsUrl, saveSheetsUrl, fetchCloudData, postCloudTransaction, fetchFixedExpenses } from '../services/googleSheets';
+import { syncFixedExpenses } from '../services/fixedExpenseService';
 
 export const CATEGORY_ICONS = {
   'Utensils': Utensils,
@@ -270,6 +271,16 @@ export const AppProvider = ({ children }) => {
       const mappedItems = (data.items || []).map(mapCloudItem);
       setCloudItems(mappedItems);
       
+      // Fetch Fixed Expenses
+      fetchFixedExpenses(targetUrl).then(fixedData => {
+        if (fixedData) {
+          // 支援後端直接回傳陣列，或包裝在 { fixedExpenses: [] } 等屬性中
+          const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
+          syncFixedExpenses(payload);
+          console.log('Fixed Expenses Synced:', payload);
+        }
+      });
+      
       setSheetsUrl(targetUrl);
       saveSheetsUrl(targetUrl);
       setCloudActive(true);
@@ -385,6 +396,15 @@ export const AppProvider = ({ children }) => {
           
           const mappedItems = (data.items || []).map(mapCloudItem);
           setCloudItems(mappedItems);
+          
+          // Fetch Fixed Expenses
+          fetchFixedExpenses(savedUrl).then(fixedData => {
+            if (fixedData) {
+              const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
+              syncFixedExpenses(payload);
+              console.log('Fixed Expenses Synced:', payload);
+            }
+          });
           
           setCloudActive(true);
           setCloudLoading(false);

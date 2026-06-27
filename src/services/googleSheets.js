@@ -59,6 +59,37 @@ export async function fetchCloudData(url) {
 }
 
 /**
+ * 獨立抓取 FixedExpenses 工作表資料
+ * @param {string} url - Google Apps Script Web App URL
+ */
+export async function fetchFixedExpenses(url) {
+  const targetUrl = url || getSheetsUrl();
+  if (!targetUrl) return null;
+
+  try {
+    // 假設後端 GAS 支援加上 action=getFixedExpenses 來回傳特定工作表資料
+    const separator = targetUrl.includes('?') ? '&' : '?';
+    const fetchUrl = `${targetUrl}${separator}action=getFixedExpenses`;
+
+    const response = await fetch(fetchUrl, {
+      method: "GET",
+      mode: "cors",
+      headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+      throw new Error(`連線失敗，狀態碼：${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("fetchFixedExpenses 發生錯誤:", error);
+    return null; // 若失敗則回傳 null，避免中斷主程式
+  }
+}
+
+/**
  * 推送記帳明細異動到雲端資料庫 (POST 請求)
  * @param {string} url - Google Apps Script Web App URL
  * @param {string} action - 操作類型：'create', 'update', 'delete'
