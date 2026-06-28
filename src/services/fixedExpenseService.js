@@ -14,18 +14,19 @@ export const syncFixedExpenses = (rawData) => {
   if (!Array.isArray(rawData)) return;
 
   const validExpenses = rawData.map((expense) => {
-    // 取字串前 10 碼 (YYYY-MM-DD)，避免時區與格式問題
-    const startDateStr = expense.startDate ? String(expense.startDate).substring(0, 10) : '';
-    const endDateStr = expense.endDate ? String(expense.endDate).substring(0, 10) : '';
+    const startDateStr = expense['日期起'] || expense.startDate || '';
+    const endDateStr = expense['日期迄'] || expense.endDate || '';
 
     let start = new Date(startDateStr);
     let end = new Date(endDateStr);
 
-    // 若無法解析，則預設為今天
-    if (isNaN(start.getTime())) {
+    // 如果 Date.parse 失敗，印出原始資料以便除錯，並預設為今天
+    if (isNaN(Date.parse(startDateStr))) {
+      console.log(`[FixedExpense] 日期起無法解析，原始資料:`, expense);
       start = new Date();
     }
-    if (isNaN(end.getTime())) {
+    if (isNaN(Date.parse(endDateStr))) {
+      console.log(`[FixedExpense] 日期迄無法解析，原始資料:`, expense);
       end = new Date();
     }
     

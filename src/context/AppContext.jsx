@@ -209,11 +209,21 @@ export const AppProvider = ({ children }) => {
       
       // 1. Map & Merge Transactions safely to prevent overwriting in-flight additions
       const mappedTxs = (data.transactions || []).map(mapCloudToLocalTx);
+      
+      const cloudIds = new Set(mappedTxs.map(t => t.id));
+      const localOnly = transactions.filter(t => t.id && !cloudIds.has(t.id) && !t.__optimistic);
+
       setTransactions(prev => {
-        const cloudIds = new Set(mappedTxs.map(t => t.id));
-        const localOnly = prev.filter(t => t.id && !cloudIds.has(t.id) && !t.__optimistic);
-        return [...mappedTxs, ...localOnly];
+        const currentLocalOnly = prev.filter(t => t.id && !cloudIds.has(t.id) && !t.__optimistic);
+        return [...mappedTxs, ...currentLocalOnly];
       });
+
+      // 將本地新增但雲端還沒有的資料同步上傳
+      if (localOnly.length > 0) {
+        Promise.all(localOnly.map(tx => postCloudTransaction(targetUrl, 'create', mapLocalToCloudTx(tx))))
+          .then(() => console.log(`[Sync] 成功上傳 ${localOnly.length} 筆本地新增資料至雲端`))
+          .catch(err => console.error('[Sync] 本地資料上傳雲端失敗:', err));
+      }
       
       // 2. Map Categories
       if (data.categories && data.categories.length > 0) {
