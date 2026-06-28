@@ -26,6 +26,8 @@ export default function Calendar() {
 
   const dailyData = useMemo(() => {
     const map = {};
+    
+    // 1. 處理一般交易
     transactions.forEach(t => {
       if (!map[t.date]) map[t.date] = { income: 0, expense: 0, tree: {} };
       const day = map[t.date];
@@ -37,8 +39,41 @@ export default function Calendar() {
       day.tree[t.mainCategory].sub[sub].amount += t.amount;
       day.tree[t.mainCategory].sub[sub].list.push(t);
     });
+    
+    // 2. 新增：處理固定支出
+    fixedExpenses.forEach(f => {
+        // 將 "日期起" 字串轉為 YYYY-MM-DD
+        const dateObj = new Date(f['日期起']);
+        const dStr = format(dateObj, 'yyyy-MM-dd');
+        
+        if (!map[dStr]) map[dStr] = { income: 0, expense: 0, tree: {} };
+        const day = map[dStr];
+        day.expense += Number(f['金額'] || 0);
+        
+        // 為了讓 UI 顯示，我們模擬一個 transaction 物件結構
+        const fTrans = {
+            id: 'fixed-' + Math.random(),
+            date: dStr,
+            type: 'expense',
+            mainCategory: f['主分類'],
+            subCategory: f['子分類'],
+            amount: Number(f['金額']),
+            mainStore: f['商店'],
+            item: f['物品'],
+            note: f['備註'] + " (固定支出)"
+        };
+        
+        // 放入樹狀結構
+        if (!day.tree[fTrans.mainCategory]) day.tree[fTrans.mainCategory] = { amount: 0, type: 'expense', sub: {} };
+        day.tree[fTrans.mainCategory].amount += fTrans.amount;
+        const sub = fTrans.subCategory || '未分類';
+        if (!day.tree[fTrans.mainCategory].sub[sub]) day.tree[fTrans.mainCategory].sub[sub] = { amount: 0, list: [] };
+        day.tree[fTrans.mainCategory].sub[sub].amount += fTrans.amount;
+        day.tree[fTrans.mainCategory].sub[sub].list.push(fTrans);
+    });
+
     return map;
-  }, [transactions]);
+  }, [transactions, fixedExpenses]); // 加入 fixedExpenses 相依項
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
@@ -64,6 +99,19 @@ export default function Calendar() {
     setIsManualModalOpen(false);
     setEditingTransaction(null);
   };
+
+// 修正後的狀態與同步邏輯
+  const [fixedExpenses, setFixedExpenses] = useState(window.fixedExpenses || []);
+
+  React.useEffect(() => {
+    const checkData = () => {
+      if (window.fixedExpenses) {
+        setFixedExpenses(window.fixedExpenses);
+      }
+    };
+    const interval = setInterval(checkData, 500);
+    return () => clearInterval(interval);
+  }, []); // 括號已補上
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
