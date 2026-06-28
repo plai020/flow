@@ -53,36 +53,57 @@ export default function Calendar() {
       day.tree[t.mainCategory].sub[sub].list.push(t);
     });
     
-    // 2. 新增：處理固定支出
-    fixedExpenses.forEach(f => {
-        // 將 "日期起" 字串轉為 YYYY-MM-DD
-        const dateObj = new Date(f['日期起']);
-        const dStr = format(dateObj, 'yyyy-MM-dd');
-        
+    // 2. 處理固定支出 (計算當前月曆顯示區間與選中日期的所有固定支出)
+    const datesToCheck = new Set([...calendarDays, selectedDate].map(d => format(d, 'yyyy-MM-dd')));
+    datesToCheck.forEach(dStr => {
+      const d = new Date(dStr);
+      const targetTimestamp = d.setHours(0, 0, 0, 0);
+      const targetMonth = d.getMonth() + 1;
+      const targetDay = d.getDate();
+
+      fixedExpenses.forEach(f => {
+        const start = f._startTimestamp || new Date(f['日期起'] || f.startDate || 0).setHours(0, 0, 0, 0);
+        const end = f._endTimestamp || new Date(f['日期迄'] || f.endDate || '2099-12-31').setHours(23, 59, 59, 999);
+
+        if (targetTimestamp < start || targetTimestamp > end) return;
+
+        const triggerDay = Number(f['觸發日'] || f.triggerDay);
+        if (triggerDay !== targetDay) return;
+
+        const freq = f['頻率'] || f.frequency || '';
+        let matchFreq = false;
+        if (freq === '每月') matchFreq = true;
+        else if (freq === '雙月') matchFreq = (targetMonth % 2 === 0);
+        else if (freq === '單月') matchFreq = (targetMonth % 2 !== 0);
+        else matchFreq = true;
+
+        if (!matchFreq) return;
+
         if (!map[dStr]) map[dStr] = { income: 0, expense: 0, tree: {} };
         const day = map[dStr];
-        day.expense += Number(f['金額'] || 0);
-        
-        // 為了讓 UI 顯示，我們模擬一個 transaction 物件結構
+        const amt = Number(f['金額'] || f.amount || 0);
+        day.expense += amt;
+
         const fTrans = {
-            id: 'fixed-' + Math.random(),
+            id: 'fixed-' + (f['主分類'] || f.mainCategory) + '-' + dStr + '-' + Math.random().toString(36).substring(2, 7),
             date: dStr,
             type: 'expense',
-            mainCategory: f['主分類'],
-            subCategory: f['子分類'],
-            amount: Number(f['金額']),
-            mainStore: f['商店'],
-            item: f['物品'],
-            note: f['備註'] + " (固定支出)"
+            mainCategory: f['主分類'] || f.mainCategory,
+            subCategory: f['子分類'] || f.subCategory,
+            amount: amt,
+            mainStore: f['商店'] || f.mainStore || '固定支出',
+            item: f['物品'] || f.item || '',
+            note: (f['備註'] || f.note || '') + " (固定支出)",
+            isFixedExpense: true
         };
-        
-        // 放入樹狀結構
+
         if (!day.tree[fTrans.mainCategory]) day.tree[fTrans.mainCategory] = { amount: 0, type: 'expense', sub: {} };
         day.tree[fTrans.mainCategory].amount += fTrans.amount;
         const sub = fTrans.subCategory || '未分類';
         if (!day.tree[fTrans.mainCategory].sub[sub]) day.tree[fTrans.mainCategory].sub[sub] = { amount: 0, list: [] };
         day.tree[fTrans.mainCategory].sub[sub].amount += fTrans.amount;
         day.tree[fTrans.mainCategory].sub[sub].list.push(fTrans);
+      });
     });
 
     return map;

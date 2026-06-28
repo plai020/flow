@@ -94,13 +94,13 @@ export const getApplicableExpenses = (currentDate) => {
     }
 
     // 2. 檢查觸發日期 (D欄)
-    // 假設 expense.triggerDay 儲存了 1~31 的數字
-    if (Number(expense.triggerDay) !== targetDay) {
+    const triggerDay = Number(expense['觸發日'] || expense.triggerDay);
+    if (triggerDay !== targetDay) {
       return false;
     }
 
     // 3. 檢查頻率 (C欄)
-    const freq = expense.frequency || '';
+    const freq = expense['頻率'] || expense.frequency || '';
     if (freq === '每月') {
       return true;
     } else if (freq === '雙月') {
