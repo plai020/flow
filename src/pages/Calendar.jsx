@@ -133,31 +133,17 @@ const dailyData = useMemo(() => {
     };
     const interval = setInterval(checkData, 500);
     return () => clearInterval(interval);
-  }, []); // 這裡必須有正確的閉合
+  }, []); 
 
+  // --- 確保 return 語句正確開始 ---
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      {/* ... (Header 到 ManualAddModal 的內容保持不變) ... */}
+      {/* ... (你的內容) ... */}
       
-      {/* Search Modal */}
+      {/* 搜尋 Modal 結尾 */}
       {isSearchModalOpen && (
         <div className="fixed inset-0 z-200 bg-surface flex flex-col" style={{ animation: 'panelUp 0.3s ease-out' }}>
-          {/* ... (這裡放你原本搜尋 Modal 內部的程式碼) ... */}
-          <div className="p-4 bg-white border-b border-gray-100 flex items-center gap-3 shadow-sm pt-8">
-            <button onClick={() => { setIsSearchModalOpen(false); setSearchQuery(''); }} className="btn-3d p-2 text-muted">
-              <ChevronLeft size={24} />
-            </button>
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜尋歷史帳務..." 
-              className="w-full bg-surface border-none rounded-xl py-3 pl-10 pr-4 font-bold outline-none"
-            />
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-             {/* ... 這裡放你的搜尋結果列表 ... */}
-          </div>
+           {/* ... (搜尋內容) ... */}
         </div>
       )}
     </div>
