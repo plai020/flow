@@ -39,6 +39,20 @@ export const syncFixedExpenses = (rawData) => {
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(validExpenses));
+
+    // --- 關鍵修改：將資料同步給全域 ---
+    window.fixedExpenses = validExpenses; 
+    
+    // --- 關鍵修改：如果你的月曆是用 React 狀態管理，這裡要觸發更新 ---
+    if (window.appEventEmitter) {
+      window.appEventEmitter.emit('fixedExpensesUpdated', validExpenses);
+    }
+    
+    // 或是如果你的 App 是直接重繪月曆：
+    if (typeof renderCalendar === 'function') {
+      renderCalendar();
+    }
+
     console.log(`[FixedExpense] 成功同步 ${validExpenses.length} 筆固定支出資料。`);
   } catch (error) {
     console.error('[FixedExpense] 無法寫入 localStorage:', error);
