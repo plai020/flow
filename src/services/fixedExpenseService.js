@@ -13,22 +13,27 @@ const STORAGE_KEY = 'fixedExpenses';
 export const syncFixedExpenses = (rawData) => {
   if (!Array.isArray(rawData)) return;
 
-  const validExpenses = rawData.filter((expense) => {
-    // 檢查日期格式是否正常
-    const start = new Date(expense.startDate);
-    const end = new Date(expense.endDate);
+  const validExpenses = rawData.map((expense) => {
+    // 取字串前 10 碼 (YYYY-MM-DD)，避免時區與格式問題
+    const startDateStr = expense.startDate ? String(expense.startDate).substring(0, 10) : '';
+    const endDateStr = expense.endDate ? String(expense.endDate).substring(0, 10) : '';
 
-    // 若日期無效 (NaN)，則略過該筆資料 (例外處理)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      console.warn(`[FixedExpense] 略過日期異常資料:`, expense);
-      return false;
+    let start = new Date(startDateStr);
+    let end = new Date(endDateStr);
+
+    // 若無法解析，則預設為今天
+    if (isNaN(start.getTime())) {
+      start = new Date();
+    }
+    if (isNaN(end.getTime())) {
+      end = new Date();
     }
     
     // 確保留下有效的 Timestamp 供後續比對效能使用
     expense._startTimestamp = start.setHours(0, 0, 0, 0);
     expense._endTimestamp = end.setHours(23, 59, 59, 999);
     
-    return true;
+    return expense;
   });
 
   try {
