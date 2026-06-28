@@ -40,40 +40,62 @@ export default function Calendar() {
       day.tree[t.mainCategory].sub[sub].list.push(t);
     });
     
-    // 2. 新增：處理固定支出
+const dailyData = useMemo(() => {
+    const map = {};
+    
+    // 1. 處理一般交易
+    transactions.forEach(t => {
+      if (!t.date) return;
+      if (!map[t.date]) map[t.date] = { income: 0, expense: 0, tree: {} };
+      const day = map[t.date];
+      if (t.type === 'income') day.income += t.amount; else day.expense += t.amount;
+      if (!day.tree[t.mainCategory]) day.tree[t.mainCategory] = { amount: 0, type: t.type, sub: {} };
+      day.tree[t.mainCategory].amount += t.amount;
+      const sub = t.subCategory || '未分類';
+      if (!day.tree[t.mainCategory].sub[sub]) day.tree[t.mainCategory].sub[sub] = { amount: 0, list: [] };
+      day.tree[t.mainCategory].sub[sub].amount += t.amount;
+      day.tree[t.mainCategory].sub[sub].list.push(t);
+    });
+    
+    // 2. 處理固定支出 (帶防呆與樹狀結構)
     fixedExpenses.forEach(f => {
-        // 將 "日期起" 字串轉為 YYYY-MM-DD
-        const dateObj = new Date(f['日期起']);
-        const dStr = format(dateObj, 'yyyy-MM-dd');
-        
-        if (!map[dStr]) map[dStr] = { income: 0, expense: 0, tree: {} };
-        const day = map[dStr];
-        day.expense += Number(f['金額'] || 0);
-        
-        // 為了讓 UI 顯示，我們模擬一個 transaction 物件結構
-        const fTrans = {
-            id: 'fixed-' + Math.random(),
-            date: dStr,
-            type: 'expense',
-            mainCategory: f['主分類'],
-            subCategory: f['子分類'],
-            amount: Number(f['金額']),
-            mainStore: f['商店'],
-            item: f['物品'],
-            note: f['備註'] + " (固定支出)"
-        };
-        
-        // 放入樹狀結構
-        if (!day.tree[fTrans.mainCategory]) day.tree[fTrans.mainCategory] = { amount: 0, type: 'expense', sub: {} };
-        day.tree[fTrans.mainCategory].amount += fTrans.amount;
-        const sub = fTrans.subCategory || '未分類';
-        if (!day.tree[fTrans.mainCategory].sub[sub]) day.tree[fTrans.mainCategory].sub[sub] = { amount: 0, list: [] };
-        day.tree[fTrans.mainCategory].sub[sub].amount += fTrans.amount;
-        day.tree[fTrans.mainCategory].sub[sub].list.push(fTrans);
+      // 防呆：檢查必備欄位
+      if (!f || !f['日期起'] || f['金額'] === undefined) return;
+      
+      const dateObj = new Date(f['日期起']);
+      if (isNaN(dateObj.getTime())) return;
+      const dStr = format(dateObj, 'yyyy-MM-dd');
+      
+      if (!map[dStr]) map[dStr] = { income: 0, expense: 0, tree: {} };
+      const day = map[dStr];
+      const amount = Number(f['金額'] || 0);
+      day.expense += amount;
+      
+      const mainCat = f['主分類'] || '未分類';
+      const subCat = f['子分類'] || '未分類';
+      
+      if (!day.tree[mainCat]) day.tree[mainCat] = { amount: 0, type: 'expense', sub: {} };
+      day.tree[mainCat].amount += amount;
+      
+      if (!day.tree[mainCat].sub[subCat]) day.tree[mainCat].sub[subCat] = { amount: 0, list: [] };
+      day.tree[mainCat].sub[subCat].amount += amount;
+      
+      // 放入樹狀結構的 list
+      day.tree[mainCat].sub[subCat].list.push({
+        id: 'fixed-' + (f.id || Math.random()),
+        date: dStr,
+        type: 'expense',
+        mainCategory: mainCat,
+        subCategory: subCat,
+        amount: amount,
+        mainStore: f['商店'] || '',
+        item: f['物品'] || '',
+        note: (f['備註'] || "") + " (固定支出)"
+      });
     });
 
     return map;
-  }, [transactions, fixedExpenses]); // 加入 fixedExpenses 相依項
+  }, [transactions, fixedExpenses]);
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };
