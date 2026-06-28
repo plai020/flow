@@ -15,6 +15,19 @@ export default function Calendar() {
   const [searchQuery, setSearchQuery] = useState('');
   const { transactions, deleteTransaction, expenseCategories, incomeCategories } = useApp();
 
+  // 修正後的狀態與同步邏輯
+  const [fixedExpenses, setFixedExpenses] = useState(window.fixedExpenses || []);
+
+  React.useEffect(() => {
+    const checkData = () => {
+      if (window.fixedExpenses) {
+        setFixedExpenses(window.fixedExpenses);
+      }
+    };
+    const interval = setInterval(checkData, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
@@ -100,18 +113,6 @@ export default function Calendar() {
     setEditingTransaction(null);
   };
 
-// 修正後的狀態與同步邏輯
-  const [fixedExpenses, setFixedExpenses] = useState(window.fixedExpenses || []);
-
-  React.useEffect(() => {
-    const checkData = () => {
-      if (window.fixedExpenses) {
-        setFixedExpenses(window.fixedExpenses);
-      }
-    };
-    const interval = setInterval(checkData, 500);
-    return () => clearInterval(interval);
-  }, []); // 括號已補上
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
