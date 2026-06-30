@@ -95,6 +95,8 @@ export default function Calendar() {
             subCategory: f['子分類'] || f.subCategory,
             amount: amt,
             mainStore: f['商店'] || f.mainStore || '固定支出',
+            branch: f['分店'] || f.branch || '',
+            payment: f['支付方式'] || f.payment || '',
             item: f['物品'] || f.item || '',
             note: (f['備註'] || f.note || '') + " (固定支出)",
             isFixedExpense: true

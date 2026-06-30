@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { format, subMonths, addMonths, startOfMonth, endOfMonth, startOfYear, subQuarters, addQuarters, startOfQuarter, endOfQuarter } from 'date-fns';
+import { format, subMonths, addMonths, startOfMonth, endOfMonth, startOfYear, subQuarters, addQuarters, startOfQuarter, endOfQuarter, eachDayOfInterval } from 'date-fns';
 import Budget from './Budget';
 import { useApp, CATEGORY_ICONS } from '../context/AppContext';
 
@@ -64,6 +64,45 @@ export default function Home() {
         const sub = t.subCategory || '未分類';
         groups[t.mainCategory].sub[sub] = (groups[t.mainCategory].sub[sub] || 0) + t.amount;
       });
+
+      // Include Fixed Expenses generated on the fly for the selected range
+      if (type === 'expense' && window.fixedExpenses) {
+        const datesToCheck = eachDayOfInterval({ start: s, end: e }).map(d => format(d, 'yyyy-MM-dd'));
+        datesToCheck.forEach(dStr => {
+          const d = new Date(dStr);
+          const targetTimestamp = d.setHours(0, 0, 0, 0);
+          const targetMonth = d.getMonth() + 1;
+          const targetDay = d.getDate();
+          
+          window.fixedExpenses.forEach(f => {
+            const startTimestamp = f._startTimestamp || new Date(f['日期起'] || f.startDate || 0).setHours(0, 0, 0, 0);
+            const endTimestamp = f._endTimestamp || new Date(f['日期迄'] || f.endDate || '2099-12-31').setHours(23, 59, 59, 999);
+            
+            if (targetTimestamp < startTimestamp || targetTimestamp > endTimestamp) return;
+            
+            const triggerDay = Number(f['觸發日'] || f.triggerDay || f['日期'] || f.date);
+            if (triggerDay !== targetDay) return;
+            
+            const freq = f['頻率'] || f.frequency || '';
+            let matchFreq = false;
+            if (freq === '每月') matchFreq = true;
+            else if (freq === '雙月') matchFreq = (targetMonth % 2 === 0);
+            else if (freq === '單月') matchFreq = (targetMonth % 2 !== 0);
+            else matchFreq = true;
+            
+            if (!matchFreq) return;
+            
+            const amt = Number(f['金額'] || f.amount || 0);
+            const mainCat = f['主分類'] || f.mainCategory || '固定支出';
+            const subCat = f['子分類'] || f.subCategory || '未分類';
+            
+            if (!groups[mainCat]) groups[mainCat] = { amount: 0, sub: {} };
+            groups[mainCat].amount += amt;
+            total += amt;
+            groups[mainCat].sub[subCat] = (groups[mainCat].sub[subCat] || 0) + amt;
+          });
+        });
+      }
     } else {
       const cats = type === 'expense' ? expenseCategories : incomeCategories;
       if (cloudBudget) {
