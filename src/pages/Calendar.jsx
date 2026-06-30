@@ -70,7 +70,7 @@ export default function Calendar() {
 
         if (targetTimestamp < start || targetTimestamp > end) return;
 
-        const triggerDay = Number(f['觸發日'] || f.triggerDay);
+        const triggerDay = Number(f['觸發日'] || f.triggerDay || f['日期'] || f.date);
         if (triggerDay !== targetDay) return;
 
         const freq = f['頻率'] || f.frequency || '';

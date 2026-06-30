@@ -94,7 +94,7 @@ export const getApplicableExpenses = (currentDate) => {
     }
 
     // 2. 檢查觸發日期 (D欄)
-    const triggerDay = Number(expense['觸發日'] || expense.triggerDay);
+    const triggerDay = Number(expense['觸發日'] || expense.triggerDay || expense['日期'] || expense.date);
     if (triggerDay !== targetDay) {
       return false;
     }
