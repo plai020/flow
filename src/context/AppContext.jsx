@@ -282,14 +282,19 @@ export const AppProvider = ({ children }) => {
       setCloudItems(mappedItems);
       
       // Fetch Fixed Expenses
-      fetchFixedExpenses(targetUrl).then(fixedData => {
-        if (fixedData) {
-          // 支援後端直接回傳陣列，或包裝在 { fixedExpenses: [] } 等屬性中
-          const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
-          syncFixedExpenses(payload);
-          console.log('Fixed Expenses Synced:', payload);
-        }
-      });
+      let fixedPayload = data.FixedExpenses || data.fixedExpenses || data.fixed_expenses;
+      if (fixedPayload && Array.isArray(fixedPayload) && fixedPayload.length > 0) {
+        syncFixedExpenses(fixedPayload);
+        console.log('Fixed Expenses Synced from main:', fixedPayload);
+      } else {
+        fetchFixedExpenses(targetUrl).then(fixedData => {
+          if (fixedData) {
+            const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
+            syncFixedExpenses(payload);
+            console.log('Fixed Expenses Synced:', payload);
+          }
+        });
+      }
       
       setSheetsUrl(targetUrl);
       saveSheetsUrl(targetUrl);
@@ -408,13 +413,19 @@ export const AppProvider = ({ children }) => {
           setCloudItems(mappedItems);
           
           // Fetch Fixed Expenses
-          fetchFixedExpenses(savedUrl).then(fixedData => {
-            if (fixedData) {
-              const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
-              syncFixedExpenses(payload);
-              console.log('Fixed Expenses Synced:', payload);
-            }
-          });
+          let fixedPayload = data.FixedExpenses || data.fixedExpenses || data.fixed_expenses;
+          if (fixedPayload && Array.isArray(fixedPayload) && fixedPayload.length > 0) {
+            syncFixedExpenses(fixedPayload);
+            console.log('Fixed Expenses Synced from main:', fixedPayload);
+          } else {
+            fetchFixedExpenses(savedUrl).then(fixedData => {
+              if (fixedData) {
+                const payload = Array.isArray(fixedData) ? fixedData : (fixedData.fixedExpenses || fixedData.data || fixedData.FixedExpenses || []);
+                syncFixedExpenses(payload);
+                console.log('Fixed Expenses Synced:', payload);
+              }
+            });
+          }
           
           setCloudActive(true);
           setCloudLoading(false);

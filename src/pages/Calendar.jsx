@@ -15,8 +15,11 @@ export default function Calendar() {
   const [searchQuery, setSearchQuery] = useState('');
   const { transactions, deleteTransaction, expenseCategories, incomeCategories } = useApp();
 
-  // 修正後的狀態與同步邏輯
-  const [fixedExpenses, setFixedExpenses] = useState(window.fixedExpenses || []);
+  const [fixedExpenses, setFixedExpenses] = useState(() => {
+    if (window.fixedExpenses) return window.fixedExpenses;
+    const stored = localStorage.getItem('fixedExpenses');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   React.useEffect(() => {
     const checkData = () => {
