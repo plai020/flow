@@ -114,7 +114,7 @@ export default function Calendar() {
     });
 
     return map;
-  }, [transactions, fixedExpenses]); // 加入 fixedExpenses 相依項
+  }, [transactions, fixedExpenses, calendarDays, selectedDate]);
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDay = dailyData[selectedDateStr] || { income: 0, expense: 0, tree: {} };

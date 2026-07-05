@@ -90,25 +90,15 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('flow_cloud_items', JSON.stringify(cloudItems)), [cloudItems]);
 
   // Robust date normalization to YYYY-MM-DD
+  // 優先使用 regex 提取日期部分，避免 new Date() 因 UTC 時區導致日期偏移
   const normalizeDate = (dateVal) => {
     if (!dateVal) return '';
     const dateStr = String(dateVal).trim();
     
-    // If it is an ISO string with T or space followed by time, parse it using Date first to respect local timezone
-    if (dateStr.includes('T') || /\s\d{2}:\d{2}/.test(dateStr)) {
-      try {
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) {
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const dd = String(d.getDate()).padStart(2, '0');
-          return `${yyyy}-${mm}-${dd}`;
-        }
-      } catch (e) {}
-    }
-    
-    // 1. Try regex extraction first to avoid timezone shift issues (e.g. "2026-05-21" or "2026/05/21")
-    const match = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    // 1. 最優先：用 regex 直接提取 YYYY-MM-DD 或 YYYY/MM/DD 日期部分
+    //    這樣即使字串包含 T 或時區資訊（如 "2026-06-26T16:00:00.000Z"），
+    //    也能正確取到日期部分 "2026-06-26"，不受 UTC 偏移影響
+    const match = dateStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     if (match) {
       const yyyy = match[1];
       const mm = match[2].padStart(2, '0');
@@ -116,7 +106,7 @@ export const AppProvider = ({ children }) => {
       return `${yyyy}-${mm}-${dd}`;
     }
     
-    // 2. Fallback to Date object parsing
+    // 2. Fallback：如果 regex 無法匹配，使用 new Date() 解析（本地時區）
     try {
       const d = new Date(dateStr);
       if (!isNaN(d.getTime())) {
