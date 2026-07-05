@@ -20,14 +20,14 @@ export const syncFixedExpenses = (rawData) => {
     let start = new Date(startDateStr);
     let end = new Date(endDateStr);
 
-    // 如果 Date.parse 失敗，印出原始資料以便除錯，並預設為今天
+    // 如果 Date.parse 失敗，印出原始資料以便除錯，並預設為極小與極大值
     if (isNaN(Date.parse(startDateStr))) {
       console.log(`[FixedExpense] 日期起無法解析，原始資料:`, expense);
-      start = new Date();
+      start = new Date(0); // fallback to epoch
     }
     if (isNaN(Date.parse(endDateStr))) {
       console.log(`[FixedExpense] 日期迄無法解析，原始資料:`, expense);
-      end = new Date();
+      end = new Date('2099-12-31'); // fallback to far future
     }
     
     // 確保留下有效的 Timestamp 供後續比對效能使用

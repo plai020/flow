@@ -65,10 +65,10 @@ export default function Calendar() {
       const targetDay = d.getDate();
 
       fixedExpenses.forEach(f => {
-        const start = f._startTimestamp || new Date(f['日期起'] || f.startDate || 0).setHours(0, 0, 0, 0);
-        const end = f._endTimestamp || new Date(f['日期迄'] || f.endDate || '2099-12-31').setHours(23, 59, 59, 999);
-
-        if (targetTimestamp < start || targetTimestamp > end) return;
+        // 取消起訖日期限制，讓固定支出在所有月份都顯示
+        // const start = f._startTimestamp || new Date(f['日期起'] || f.startDate || 0).setHours(0, 0, 0, 0);
+        // const end = f._endTimestamp || new Date(f['日期迄'] || f.endDate || '2099-12-31').setHours(23, 59, 59, 999);
+        // if (targetTimestamp < start || targetTimestamp > end) return;
 
         const triggerDay = Number(f['觸發日'] || f.triggerDay || f['日期'] || f.date);
         if (triggerDay !== targetDay) return;
