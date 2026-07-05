@@ -70,7 +70,9 @@ export default function Calendar() {
         // const end = f._endTimestamp || new Date(f['日期迄'] || f.endDate || '2099-12-31').setHours(23, 59, 59, 999);
         // if (targetTimestamp < start || targetTimestamp > end) return;
 
-        const triggerDay = Number(f['觸發日'] || f.triggerDay || f['日期'] || f.date);
+        const dateStr = String(f['觸發日'] || f.triggerDay || f['日期'] || f.date || '');
+        const match = dateStr.match(/(\d+)$/);
+        const triggerDay = match ? Number(match[1]) : NaN;
         if (triggerDay !== targetDay) return;
 
         const freq = f['頻率'] || f.frequency || '';

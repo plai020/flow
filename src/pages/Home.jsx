@@ -81,7 +81,9 @@ export default function Home() {
             // 
             // if (targetTimestamp < startTimestamp || targetTimestamp > endTimestamp) return;
             
-            const triggerDay = Number(f['觸發日'] || f.triggerDay || f['日期'] || f.date);
+            const dateStr = String(f['觸發日'] || f.triggerDay || f['日期'] || f.date || '');
+            const match = dateStr.match(/(\d+)$/);
+            const triggerDay = match ? Number(match[1]) : NaN;
             if (triggerDay !== targetDay) return;
             
             const freq = f['頻率'] || f.frequency || '';
