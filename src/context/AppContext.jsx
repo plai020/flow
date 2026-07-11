@@ -90,14 +90,29 @@ export const AppProvider = ({ children }) => {
   useEffect(() => localStorage.setItem('flow_cloud_items', JSON.stringify(cloudItems)), [cloudItems]);
 
   // Robust date normalization to YYYY-MM-DD
-  // 優先使用 regex 提取日期部分，避免 new Date() 因 UTC 時區導致日期偏移
+  // 根據日期格式選擇正確的解析策略，避免 UTC 時區偏移導致日期差一天
   const normalizeDate = (dateVal) => {
     if (!dateVal) return '';
     const dateStr = String(dateVal).trim();
     
-    // 1. 最優先：用 regex 直接提取 YYYY-MM-DD 或 YYYY/MM/DD 日期部分
-    //    這樣即使字串包含 T 或時區資訊（如 "2026-06-26T16:00:00.000Z"），
-    //    也能正確取到日期部分 "2026-06-26"，不受 UTC 偏移影響
+    // 1. 如果是 ISO UTC 時間戳格式（含 T，例如 "2026-06-12T16:00:00.000Z"）
+    //    必須使用 new Date() 轉為本地時區再提取日期，否則 UTC+8 會少一天
+    //    例如：Google Sheets 將 6/13 (UTC+8) 存為 "2026-06-12T16:00:00.000Z"
+    //    直接用 regex 抓會得到 6/12（錯誤），用 new Date() 轉本地時區才會得到 6/13（正確）
+    if (dateStr.includes('T')) {
+      try {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+      } catch (e) {}
+    }
+    
+    // 2. 純日期字串（如 "2026-06-13" 或 "2026/06/13"）：用 regex 直接提取
+    //    這種格式沒有時區問題，直接取日期部分即可
     const match = dateStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
     if (match) {
       const yyyy = match[1];
@@ -106,7 +121,7 @@ export const AppProvider = ({ children }) => {
       return `${yyyy}-${mm}-${dd}`;
     }
     
-    // 2. Fallback：如果 regex 無法匹配，使用 new Date() 解析（本地時區）
+    // 3. Fallback：其他格式使用 new Date() 解析（本地時區）
     try {
       const d = new Date(dateStr);
       if (!isNaN(d.getTime())) {
